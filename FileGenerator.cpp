@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <getopt.h>
 #include <string.h>
 #include <cmath>
@@ -37,7 +38,7 @@ int main(int argc, char *argv[])
             cout << "-h [ --help ]\t\tShows help" << endl;
             cout << "-s [ --size ] arg\tInput size of generating file" << endl;
             cout << endl;
-            cout << "if -s flag isn't used, program will try to use default size: 1" << endl;
+            cout << "if -s flag isn't used, program will try to use default size: 1024" << endl;
             cout << endl;
             cout << "-p [ --prefix ] arg\tPrefix" << endl;
             cout << endl;
@@ -90,7 +91,7 @@ int main(int argc, char *argv[])
                     if ((n < 1) || (n > 5))
                         throw invalid_argument("Invalid prefix value: is too big, or too small.");
                     else
-                        size *= pow(kilosize, n - 1);
+                        size *= pow(kilosize, n);
                 }
                 else
                     throw invalid_argument("Invalid prefix type");
@@ -111,6 +112,22 @@ int main(int argc, char *argv[])
             break;
         }
     }
+
+    /*Calculating number of numbers, needed to 
+    file size equal to size*/
+    size /= sizeof(unsigned int);
+
+    /*Output to binary file*/
+    ofstream output("Array",ios::binary);
+
+    for(int i=0; i<size; i++){
+        
+        /*Generating random value*/
+        unsigned int value = rand();
+
+        output.write((char*)&value, sizeof(value));
+    }
+
     return 0;
 }
 
