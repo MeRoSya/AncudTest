@@ -32,9 +32,9 @@ PASS_REGULAR_EXPRESSION "ParallelSort: option requires an argument -- f")
 set_tests_properties(ParallelSort_Regular_Sort PROPERTIES
 FAIL_REGULAR_EXPRESSION "Error, while trying to open the file")
 set_tests_properties(ParallelSort_Checked_Sort PROPERTIES
-FAIL_REGULAR_EXPRESSION "Array is sorted")
+FAIL_REGULAR_EXPRESSION "Error, while trying to open the file;Error occured while reading the file;Array is not sorted")
 set_tests_properties(ParallelSort_Checked_UnSort PROPERTIES
-FAIL_REGULAR_EXPRESSION "Array is not sorted")
+FAIL_REGULAR_EXPRESSION "Error, while trying to open the file;Error occured while reading the file;Array is sorted")
 
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
