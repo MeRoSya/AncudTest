@@ -121,12 +121,14 @@ int main(int argc, char *argv[])
     ofstream output("Array",ios::binary);
 
     for(int i=0; i<size; i++){
-        
+
         /*Generating random value*/
         unsigned int value = rand();
 
         output.write((char*)&value, sizeof(value));
     }
+
+    output.close();
 
     return 0;
 }
