@@ -92,6 +92,7 @@ int main(int argc, char *argv[])
         ofstream output("Sorted_Array", ios::binary);
         for (auto item = Values.begin(); item < Values.end(); item++)
         {
+            /*cout << *item << endl;*/
             output.write((char *)&(*item), sizeof(*item));
         }
         cout << "Done" << endl;
@@ -113,32 +114,36 @@ efficiency by memory, while sorting large arrays
 void Threaded_Sort(vector<unsigned int> &Values, int t_num)
 {
     thread threads[t_num];
-    int begin[t_num];
-    int end[t_num];
+    int nodes[t_num+1];
+    nodes[0]=0;
+
     for (int i = 0; i < t_num; i++)
     {
-        if (i < t_num - 1)
-        {
-            begin[i] = i * Values.size() / t_num;
-            end[i] = (i + 1) * Values.size() / t_num;
-        }
-        else
-        {
-            begin[i] = i * Values.size() / t_num;
-            end[i] = Values.size();
-        }
-        threads[i] = thread(Threaded_It, ref(Values), begin[i], end[i]);
+        nodes[i+1] = (i+1) * Values.size() / t_num;
+        threads[i] = thread(Threaded_It, ref(Values), nodes[i], nodes[i+1]);
+    }
+
+    for (int i = 0; i < t_num; i++)
+    {
+        if (threads[i].joinable())
+            threads[i].join();
+    }
+    /*Unknown problem happens, while merging in threads:
+    sometimes array isn't sorted. And I couldn't catch it in
+    debugger. In debugger all works fine always. 
+    So for now, no multithreading merge*/
+    /*for (int i=0; i<t_num; i++){
+        if (i<t_num-1)
+            threads[i] = thread(Threaded_Merge, ref(Values), nodes[i+1], nodes[i+2]);
     }
     for (int i = 0; i < t_num; i++)
     {
         if (threads[i].joinable())
             threads[i].join();
-        threads[i] = thread(Threaded_Merge, ref(Values), begin[i], end[i]);
-    }
-    for (int i = 0; i < t_num; i++)
-    {
-        if (threads[i].joinable())
-            threads[i].join();
+    }*/
+
+    for (int i=1; i<t_num; i++){
+        inplace_merge(Values.begin(), Values.begin() + nodes[i], Values.begin() + nodes[i+1]);
     }
 }
 
