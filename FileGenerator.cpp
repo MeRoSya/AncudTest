@@ -118,6 +118,7 @@ int main(int argc, char *argv[])
     size /= sizeof(unsigned int);
 
     /*Output to binary file*/
+    remove("Array");
     ofstream output("Array",ios::binary);
 
     for(int i=0; i<size; i++){

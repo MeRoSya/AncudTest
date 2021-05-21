@@ -2,9 +2,7 @@
 #include <fstream>
 #include <thread>
 #include <vector>
-#include <chrono>
 #include <getopt.h>
-
 using namespace std;
 
 mutex mut;
@@ -90,6 +88,7 @@ int main(int argc, char *argv[])
 
         /*Output to file*/
         cout << "Writing to file..." << endl;
+        remove("Sorted_Array");
         ofstream output("Sorted_Array", ios::binary);
         for (auto item = Values.begin(); item < Values.end(); item++)
         {
