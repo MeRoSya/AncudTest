@@ -20,12 +20,12 @@ int main(int argc, char *argv[])
                                                {"file", required_argument, 0, 'f'}};
         int option_index = 0;
 
-        int c = getopt_long(argc, argv, "hf:", long_options, &option_index);
+        int cur_opt = getopt_long(argc, argv, "hf:", long_options, &option_index);
 
-        if (c == -1)
+        if (cur_opt == -1)
             break;
 
-        switch (c)
+        switch (cur_opt)
         {
 
         /*Help information*/
@@ -65,6 +65,7 @@ int main(int argc, char *argv[])
         while (input.peek() != EOF)
         {
             unsigned int value;
+
             /*Here can be errors, while reading from file (broken file, for example), so
             it must be handled*/
             try
@@ -73,7 +74,6 @@ int main(int argc, char *argv[])
 
                 /*Checking if current value is lesser than previous value.
                 if it is so, array isn't sorted and we can finish programm.*/
-
                 if (value < comp)
                 {
 
