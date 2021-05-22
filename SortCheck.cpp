@@ -1,10 +1,11 @@
-#include<iostream>
-#include<fstream>
+#include <iostream>
+#include <fstream>
 #include <getopt.h>
 
 using namespace std;
 
-int main(int argc, char* argv[]){
+int main(int argc, char *argv[])
+{
 
     /*Creating variable, containing path to file
     and intialize it with default value*/
@@ -50,7 +51,7 @@ int main(int argc, char* argv[]){
             break;
         }
     }
-    
+
     /*Variable, containing
     previous value, read from file*/
 
@@ -73,13 +74,14 @@ int main(int argc, char* argv[]){
                 /*Checking if current value is lesser than previous value.
                 if it is so, array isn't sorted and we can finish programm.*/
 
-                if(value<comp){
-                    
+                if (value < comp)
+                {
+
                     cout << "Array is not sorted" << endl;
                     return 1;
                 }
-                
-                comp = value; 
+
+                comp = value;
             }
             catch (...)
             {
@@ -88,7 +90,8 @@ int main(int argc, char* argv[]){
             }
         }
         cout << "Array is sorted" << endl;
-    } else
+    }
+    else
         cout << "Error, while trying to open the file" << endl;
     return 0;
 }

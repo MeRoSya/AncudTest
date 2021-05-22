@@ -2,15 +2,14 @@
 #include <fstream>
 #include <thread>
 #include <vector>
-#include <execution>
 #include <getopt.h>
 using namespace std;
 
 mutex mut;
 
 /*Functions' prototypes*/
-void Threaded_Sort(vector<unsigned int> &, int);       /*Function sorts data using std::sort and threads*/
-void Threaded_It(vector<unsigned int> &, int, int);    /*One-thread-func while sorting*/
+void Threaded_Sort(vector<unsigned int> &, int);    /*Function sorts data using std::sort and threads*/
+void Threaded_It(vector<unsigned int> &, int, int); /*One-thread-func while sorting*/
 
 int main(int argc, char *argv[])
 {
@@ -114,13 +113,13 @@ efficiency by memory, while sorting large arrays
 void Threaded_Sort(vector<unsigned int> &Values, int t_num)
 {
     thread threads[t_num];
-    int nodes[t_num+1];
-    nodes[0]=0;
+    int nodes[t_num + 1];
+    nodes[0] = 0;
 
     for (int i = 0; i < t_num; i++)
     {
-        nodes[i+1] = (i+1) * Values.size() / t_num;
-        threads[i] = thread(Threaded_It, ref(Values), nodes[i], nodes[i+1]);
+        nodes[i + 1] = (i + 1) * Values.size() / t_num;
+        threads[i] = thread(Threaded_It, ref(Values), nodes[i], nodes[i + 1]);
     }
 
     for (int i = 0; i < t_num; i++)
@@ -129,8 +128,9 @@ void Threaded_Sort(vector<unsigned int> &Values, int t_num)
             threads[i].join();
     }
 
-    for (int i=1; i<t_num; i++){
-        inplace_merge(Values.begin(), Values.begin() + nodes[i], Values.begin() + nodes[i+1]);
+    for (int i = 1; i < t_num; i++)
+    {
+        inplace_merge(Values.begin(), Values.begin() + nodes[i], Values.begin() + nodes[i + 1]);
     }
 }
 
