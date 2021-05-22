@@ -4,7 +4,11 @@
 #include <vector>
 #include <getopt.h>
 
+#include <chrono>
+
 using namespace std;
+
+mutex mut;
 
 /*Functions' prototypes*/
 
@@ -13,6 +17,7 @@ Function break vector into t_num parts and sorts them
 in different threads. Then parts are merged. The algorythm
 is fast, but uses extra memory for merging, so it may have terrible
 efficiency by memory, while sorting large arrays
+
 Args:
 Values - reference to vector of unsigned ints to be sorted
 t_num - number of threads to be used
@@ -23,12 +28,33 @@ void Threaded_Sort(vector<unsigned int> &Values, int t_num);
 Function, running by one thread, while sorting.
 Threads in that case have no shared memory, so
 there is no need for synchronization.
+
 Args:
 Values - reference to vector of unsigned ints to be sorted
 begin - first border
 end - second border
 */
 void Threaded_It(vector<unsigned int> &Values, int begin, int end);
+
+/*
+Function break in halfs and then fork one thread to call recursion
+for the first half and call recursion for another half in this thread.
+After they finished, sorted parts are merged.
+Recursion continues, until either number of active threads not greater, than
+system core num. When recursion ends, current range of vector sorts by std::sort
+and then go on upper level of recursion, where sorted parts are merged.
+It is about 1.5 times faster, than Threaded_Sort 
+
+Comparasing for 1 GB file:
+Rec_Threaded_Sort: 36648462 mcs
+Threaded_Sort: 56514361 mcs
+
+Args:
+Values - reference to vector of unsigned ints to be sorted
+begin - first border
+end - second border
+*/
+void Rec_Threaded_Sort(vector<unsigned int> &Values, int begin, int end);
 
 int main(int argc, char *argv[])
 {
@@ -83,6 +109,7 @@ int main(int argc, char *argv[])
     /*Checking, if file is open*/
     if (input.good())
     {
+        cout << "Reading from file..." << endl;
         /*Read values from file*/
         while (input.peek() != EOF)
         {
@@ -105,16 +132,16 @@ int main(int argc, char *argv[])
 
         /*Sorting*/
         cout << "Sorting..." << endl;
-        Threaded_Sort(ref(Values), sysconf(_SC_NPROCESSORS_ONLN));
+        Rec_Threaded_Sort(ref(Values),0,Values.size());
 
         /*Output to file*/
         cout << "Writing to file..." << endl;
 
         remove("Sorted_Array");
         ofstream output("Sorted_Array", ios::binary);
-        for (auto item = Values.begin(); item < Values.end(); item++)
+
+        for (auto item = Values.begin(); item < Values.end()-2; item++)
         {
-            /*cout << *item << endl;*/
             output.write((char *)&(*item), sizeof(*item));
         }
         cout << "Done" << endl;
@@ -168,4 +195,20 @@ void Threaded_It(vector<unsigned int> &Values, int begin, int end)
     sort(Values.begin() + begin, Values.begin() + end);
 }
 
-
+void Rec_Threaded_Sort(vector<unsigned int> &Values, int begin, int end)
+{
+    static atomic_int t_num(0);
+    t_num++;
+    if (!(t_num > sysconf(_SC_NPROCESSORS_ONLN)/2) && (end>128))
+    {
+        thread t(Rec_Threaded_Sort, ref(Values), 0, end/2);
+        t.join();
+        Rec_Threaded_Sort(ref(Values), end/2, end);
+        inplace_merge(Values.begin()+begin, Values.begin() + end/2, Values.begin() + end);
+    }
+    else
+    {
+        sort(Values.begin() + begin, Values.begin() + end);
+    }
+    
+}
