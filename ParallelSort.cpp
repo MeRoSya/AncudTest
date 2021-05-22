@@ -5,8 +5,6 @@
 #include <getopt.h>
 using namespace std;
 
-mutex mut;
-
 /*Functions' prototypes*/
 void Threaded_Sort(vector<unsigned int> &, int);    /*Function sorts data using std::sort and threads*/
 void Threaded_It(vector<unsigned int> &, int, int); /*One-thread-func while sorting*/
