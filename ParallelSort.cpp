@@ -8,8 +8,6 @@
 
 using namespace std;
 
-mutex mut;
-
 /*Functions' prototypes*/
 
 /* 
@@ -132,7 +130,7 @@ int main(int argc, char *argv[])
 
         /*Sorting*/
         cout << "Sorting..." << endl;
-        Rec_Threaded_Sort(ref(Values),0,Values.size());
+        Rec_Threaded_Sort(ref(Values), 0, Values.size());
 
         /*Output to file*/
         cout << "Writing to file..." << endl;
@@ -140,7 +138,7 @@ int main(int argc, char *argv[])
         remove("Sorted_Array");
         ofstream output("Sorted_Array", ios::binary);
 
-        for (auto item = Values.begin(); item < Values.end()-2; item++)
+        for (auto item = Values.begin(); item < Values.end() - 2; item++)
         {
             output.write((char *)&(*item), sizeof(*item));
         }
@@ -199,16 +197,15 @@ void Rec_Threaded_Sort(vector<unsigned int> &Values, int begin, int end)
 {
     static atomic_int t_num(0);
     t_num++;
-    if (!(t_num > sysconf(_SC_NPROCESSORS_ONLN)/2) && (end>128))
+    if (!(t_num > sysconf(_SC_NPROCESSORS_ONLN) / 2) && (end > 128))
     {
-        thread t(Rec_Threaded_Sort, ref(Values), 0, end/2);
+        thread t(Rec_Threaded_Sort, ref(Values), 0, end / 2);
         t.join();
-        Rec_Threaded_Sort(ref(Values), end/2, end);
-        inplace_merge(Values.begin()+begin, Values.begin() + end/2, Values.begin() + end);
+        Rec_Threaded_Sort(ref(Values), end / 2, end);
+        inplace_merge(Values.begin() + begin, Values.begin() + end / 2, Values.begin() + end);
     }
     else
     {
         sort(Values.begin() + begin, Values.begin() + end);
     }
-    
 }
