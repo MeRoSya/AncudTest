@@ -18,7 +18,7 @@ bool Is_Number(char *value);
 int main(int argc, char *argv[])
 {
     srand(time(0));
-    const unsigned int kilosize = 1024;
+    unsigned int kilosize = 1024;
     unsigned long long int size = 1;
 
     /*Cmd args handling*/
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
                     if (n == 0)
                         throw(invalid_argument("Size cannot be 0"));
                     else
-                        size = n * kilosize;
+                        size = n;
                 }
                 else
                     throw invalid_argument("Invalid size");
@@ -105,8 +105,7 @@ int main(int argc, char *argv[])
                         throw invalid_argument("Invalid prefix value: is too big, or too small.");
                         n = 1;
                     }
-
-                    size *= pow(kilosize, n);
+                    kilosize = pow(kilosize,n);
                 }
                 else
                     throw invalid_argument("Invalid prefix type");
@@ -127,6 +126,8 @@ int main(int argc, char *argv[])
             break;
         }
     }
+
+    size *= kilosize;
 
     /*Calculating number of numbers, needed to 
     file size equal to size*/
