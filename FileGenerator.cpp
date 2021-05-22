@@ -7,13 +7,19 @@
 using namespace std;
 
 /*Functions' prototypes*/
-bool is_number(char *); /*Function, checking c-type string to be number*/
+
+/*
+Function, checking c-type string to be number
+Args:
+value - c-type string to be checked
+*/
+bool Is_Number(char *value);
 
 int main(int argc, char *argv[])
 {
     srand(time(0));
     const unsigned int kilosize = 1024;
-    unsigned int size = kilosize;
+    unsigned long long int size = 1;
 
     /*Cmd args handling*/
     while (true)
@@ -23,12 +29,12 @@ int main(int argc, char *argv[])
                                                {"size", required_argument, 0, 's'}};
         int option_index = 0;
 
-        int c = getopt_long(argc, argv, "hs:p:", long_options, &option_index);
+        int cur_opt = getopt_long(argc, argv, "hs:p:", long_options, &option_index);
 
-        if (c == -1)
+        if (cur_opt == -1)
             break;
 
-        switch (c)
+        switch (cur_opt)
         {
 
         /*Help information*/
@@ -59,15 +65,20 @@ int main(int argc, char *argv[])
             try
             {
                 /*Not number argument for size makes no sence, so it must be handled as error*/
-                if (is_number(optarg))
+                if (Is_Number(optarg))
                 {
                     unsigned int n = atoi(optarg);
 
-                    /*Size with negative value or with value 0 makes no sence, so it must 
-                    be handled as error. But it is already checked in is_number function, 
-                    so it is unneseserry to check it here*/
-
-                    size = n;
+                    /*
+                    Size with negative value makes no sence, so it must 
+                    be handled as error. But it is already checked in Is_Number function, 
+                    so it is unneseserry to check it here. Also it is pointless for size
+                    to be equal 0. So that case must be handled too
+                    */
+                    if (n == 0)
+                        throw(invalid_argument("Size cannot be 0"));
+                    else
+                        size = n * kilosize;
                 }
                 else
                     throw invalid_argument("Invalid size");
@@ -79,19 +90,23 @@ int main(int argc, char *argv[])
             }
             break;
 
+        /*Checking --prefix flag*/
         case 'p':
             try
             {
                 /*Not number argument for prefix makes no sence, so it must be handled as error*/
-                if (is_number(optarg))
+                if (Is_Number(optarg))
                 {
                     unsigned int n = atoi(optarg);
 
                     /*Prefix with value not in [1;5] makes no sence, so it must be handled as error*/
                     if ((n < 1) || (n > 5))
+                    {
                         throw invalid_argument("Invalid prefix value: is too big, or too small.");
-                    else
-                        size *= pow(kilosize, n);
+                        n = 1;
+                    }
+
+                    size *= pow(kilosize, n);
                 }
                 else
                     throw invalid_argument("Invalid prefix type");
@@ -136,12 +151,13 @@ int main(int argc, char *argv[])
 }
 
 /*Implementation of functions*/
-bool is_number(char *value)
+
+bool Is_Number(char *value)
 {
     string str(value);
     for (auto item = str.begin(); item < str.end(); item++)
     {
-        /*Checking current symbol to be number*/
+        /*Checking current symbol to be digit*/
         if (!isdigit(*item))
         {
             return false;
