@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
             cout << "-h [ --help ]\t\tShows help" << endl;
             cout << "-s [ --size ] arg\tInput size of generating file" << endl;
             cout << endl;
-            cout << "if -s flag isn't used, program will try to use default size: 1024" << endl;
+            cout << "if -s flag isn't used, program will try to use default size: 1" << endl;
             cout << endl;
             cout << "-p [ --prefix ] arg\tPrefix" << endl;
             cout << endl;
