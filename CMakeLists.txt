@@ -18,8 +18,8 @@ add_test(FileGenerator_Size_Prefix_Invalid_OutOfRange FileGenerator -s fsfs -p 1
 add_test(ParallelSort_Path_Invalid ParallelSort -f fsfs)
 add_test(ParallelSort_Path_Null ParallelSort -f)
 add_test(ParallelSort_Regular_Sort FileGenerator ParallelSort)
-add_test(ParallelSort_Checked_Sort bash -c ./FileGenerator ./ParallelSort ./SortCheck)
-add_test(ParallelSort_Checked_UnSort bash -c ./FileGenerator; ./ParallelSort; ./SortCheck -f Array)
+add_test(SortCheck_Checked_Sort SortCheck)
+add_test(SortCheck_Checked_UnSort SortCheck -f Array)
 
 set_tests_properties(FileGenerator_Prefix_Invalid PROPERTIES
 PASS_REGULAR_EXPRESSION "Invalid prefix type;Default prefix will be used")
@@ -37,10 +37,10 @@ set_tests_properties(ParallelSort_Path_Null PROPERTIES
 PASS_REGULAR_EXPRESSION "ParallelSort: option requires an argument -- f")
 set_tests_properties(ParallelSort_Regular_Sort PROPERTIES
 FAIL_REGULAR_EXPRESSION "Error, while trying to open the file")
-set_tests_properties(ParallelSort_Checked_Sort PROPERTIES
-FAIL_REGULAR_EXPRESSION "Error, while trying to open the file;Error occured while reading the file;Array is not sorted")
-set_tests_properties(ParallelSort_Checked_UnSort PROPERTIES
-FAIL_REGULAR_EXPRESSION "Error, while trying to open the file;Error occured while reading the file;Array is sorted")
+set_tests_properties(SortCheck_Checked_Sort PROPERTIES
+PASS_REGULAR_EXPRESSION "Array is sorted")
+set_tests_properties(SortCheck_Checked_UnSort PROPERTIES
+PASS_REGULAR_EXPRESSION "Array is not sorted")
 
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
