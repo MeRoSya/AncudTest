@@ -2,6 +2,7 @@
 #include <fstream>
 #include <thread>
 #include <vector>
+#include <execution>
 #include <getopt.h>
 using namespace std;
 
@@ -10,7 +11,6 @@ mutex mut;
 /*Functions' prototypes*/
 void Threaded_Sort(vector<unsigned int> &, int);       /*Function sorts data using std::sort and threads*/
 void Threaded_It(vector<unsigned int> &, int, int);    /*One-thread-func while sorting*/
-void Threaded_Merge(vector<unsigned int> &, int, int); /*One-thread-func while merging*/
 
 int main(int argc, char *argv[])
 {
@@ -128,19 +128,6 @@ void Threaded_Sort(vector<unsigned int> &Values, int t_num)
         if (threads[i].joinable())
             threads[i].join();
     }
-    /*Unknown problem happens, while merging in threads:
-    sometimes array isn't sorted. And I couldn't catch it in
-    debugger. In debugger all works fine always. 
-    So for now, no multithreading merge*/
-    /*for (int i=0; i<t_num; i++){
-        if (i<t_num-1)
-            threads[i] = thread(Threaded_Merge, ref(Values), nodes[i+1], nodes[i+2]);
-    }
-    for (int i = 0; i < t_num; i++)
-    {
-        if (threads[i].joinable())
-            threads[i].join();
-    }*/
 
     for (int i=1; i<t_num; i++){
         inplace_merge(Values.begin(), Values.begin() + nodes[i], Values.begin() + nodes[i+1]);
@@ -153,14 +140,4 @@ there is no need for synchronization.*/
 void Threaded_It(vector<unsigned int> &Values, int begin, int end)
 {
     sort(Values.begin() + begin, Values.begin() + end);
-}
-
-/*Function, running by one thread, while merging.
-Threads have access to shared memory, so they have 
-to be synchronized. I use mutex for that.*/
-void Threaded_Merge(vector<unsigned int> &Values, int begin, int end)
-{
-    mut.lock();
-    inplace_merge(Values.begin(), Values.begin() + begin, Values.begin() + end);
-    mut.unlock();
 }
