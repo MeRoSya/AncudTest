@@ -6,8 +6,6 @@
 
 using namespace std;
 
-mutex mut;
-
 /*Functions' prototypes*/
 
 /* 
