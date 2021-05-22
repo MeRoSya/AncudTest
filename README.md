@@ -34,3 +34,4 @@ Command line options:
 * -h [ --help ] shows help
 * -f [ --file ] arg sets path to file
 
+Using CTest in CMake to test
