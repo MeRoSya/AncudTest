@@ -2,11 +2,15 @@
 #include <fstream>
 #include <thread>
 #include <vector>
+#include <cmath>
+#include <sys/stat.h>
 #include <getopt.h>
 
-#include <chrono>
+const unsigned long long int default_mem_amount = pow(2,28);
 
 using namespace std;
+
+/*USE MERGE SORT AND TEMP FILES TO SORT FILE CONTENT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
 
 /*Functions' prototypes*/
 
@@ -53,6 +57,12 @@ begin - first border
 end - second border
 */
 void Rec_Threaded_Sort(vector<unsigned int> &Values, int begin, int end);
+
+void Threaded_File_Sort(string path);
+
+void File_Sort(ifstream &input, int begin, int end);
+
+void File_Split(string path);
 
 int main(int argc, char *argv[])
 {
@@ -101,51 +111,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    vector<unsigned int> Values(0);
-    ifstream input(path, ios::binary);
-
-    /*Checking, if file is open*/
-    if (input.good())
-    {
-        cout << "Reading from file..." << endl;
-        /*Read values from file*/
-        while (input.peek() != EOF)
-        {
-            unsigned int value;
-
-            /*Here can be errors, while reading from file, so
-            it must be handled*/
-            try
-            {
-                input.read((char *)&value, sizeof(value));
-                Values.push_back(value);
-            }
-            catch (...)
-            {
-                cout << "Error occured while reading the file" << endl;
-                return 1;
-            }
-        }
-        input.close();
-
-        /*Sorting*/
-        cout << "Sorting..." << endl;
-        Rec_Threaded_Sort(ref(Values), 0, Values.size());
-
-        /*Output to file*/
-        cout << "Writing to file..." << endl;
-
-        remove("Sorted_Array");
-        ofstream output("Sorted_Array", ios::binary);
-
-        for (auto item = Values.begin(); item < Values.end() - 2; item++)
-        {
-            output.write((char *)&(*item), sizeof(*item));
-        }
-        cout << "Done" << endl;
-    }
-    else
-        cout << "Error, while trying to open the file" << endl;
+    Threaded_File_Sort(path);
 
     return 0;
 }
@@ -209,3 +175,78 @@ void Rec_Threaded_Sort(vector<unsigned int> &Values, int begin, int end)
         sort(Values.begin() + begin, Values.begin() + end);
     }
 }
+
+void Threaded_File_Sort(string path)
+{
+    /*Finding out numbers of elements in the file*/
+    ifstream input(path, ios::ate);
+    unsigned long long int size = input.tellg()/sizeof(unsigned int);
+    input.close();
+
+    unsigned int t_num = sysconf(_SC_NPROCESSORS_ONLN);
+    thread threads[t_num];
+    int nodes [t_num+1];
+    nodes[0]=0;
+    File_Split(path);
+
+    /*input.open("Sorted_Array", ios::binary);
+
+    for (int i=0; i<t_num; i++)
+    {
+        nodes[i+1]=(i+1)*size/t_num;
+        threads[i] = thread(File_Sort, ref(input), nodes[i], nodes[i+1]);
+    }
+
+    for (int i=0; i<t_num; i++)
+    {
+        if (threads[i].joinable())
+            threads[i].join();
+    }*/
+    
+}
+
+void File_Sort(ifstream &input, int begin, int end)
+{
+    for (int i=begin; i<end; i++)
+    {
+        input.seekg(i);
+        int cur_value;
+        input.read((char*)&cur_value, sizeof(cur_value));
+        for (int j=i; j>0; j--)
+        {
+            input.seekg(j);
+            int cur_position;
+            int next_position;
+            input.read((char*)&cur_position, sizeof(cur_position));
+            if (cur_value>cur_position)
+                break;
+            else
+            {
+                input.seekg(j-1);
+                input.read((char*)&next_position, sizeof(next_position));
+            }
+            
+        }
+    }
+}
+
+/*splits the file correctly, but when it goes for array less than 4 kb, threre are extra zeros*/
+void File_Split(string path)
+{
+    ifstream input(path, ios::binary);
+    mkdir("temp",S_IRWXU);
+    int f_num = 0;
+    vector<unsigned int> cur_values(1024);
+    //ifstream check("./temp/"+to_string(i), ios::ate);
+    while (input.peek()!=EOF)
+    {
+        input.read((char*)&cur_values[0], cur_values.size()*sizeof(cur_values[0]));
+        sort(cur_values.begin(),cur_values.end());
+        ofstream output("./temp/"+to_string(f_num), ios::binary | ios_base::app);
+        output.write((char*)&cur_values[0], cur_values.size()*sizeof(cur_values[0]));
+        output.close();
+        f_num++;
+    }
+    input.close();
+}
+
