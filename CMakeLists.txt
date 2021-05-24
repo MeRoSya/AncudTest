@@ -1,12 +1,23 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(UncudTest VERSION 0.1.0)
 
+find_package(Boost 1.75 REQUIRED COMPONENTS filesystem)
+
+include_directories(${Boost_INCLUDE_DIR})
+link_directories(${Boost_LIBRARY_DIR})
+
 set (CMAKE_CXX_COMPILE clanlg++)
 set (CMAKE_CXX_STANDARD 11)
+
+
 
 add_executable(ParallelSort ParallelSort.cpp)
 add_executable(FileGenerator FileGenerator.cpp)
 add_executable(SortCheck SortCheck.cpp)
+
+TARGET_LINK_LIBRARIES(ParallelSort Boost::filesystem)
+
+
 
 include(CTest)
 enable_testing()
