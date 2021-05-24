@@ -3,14 +3,11 @@
 #include <thread>
 #include <vector>
 #include <cmath>
+#include <boost/filesystem.hpp>
 #include <sys/stat.h>
 #include <getopt.h>
 
-const unsigned long long int default_mem_amount = pow(2,28);
-
 using namespace std;
-
-/*USE MERGE SORT AND TEMP FILES TO SORT FILE CONTENT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
 
 /*Functions' prototypes*/
 
@@ -58,16 +55,23 @@ end - second border
 */
 void Rec_Threaded_Sort(vector<unsigned int> &Values, int begin, int end);
 
+
 void Threaded_File_Sort(string path);
 
-void File_Sort(ifstream &input, int begin, int end);
-
+/*
+Function splits initial file into many files with size of 4 kb (standart claster size),
+in which values are already sorted
+Args:
+path - path to file to be splitted
+*/
 void File_Split(string path);
 
 int main(int argc, char *argv[])
 {
-    /*Creating variable, containing path to file
-    and intialize it with default value*/
+    /*
+    Creating variable, containing path to file
+    and intialize it with default value
+    */
 
     string path = "Array";
 
@@ -111,7 +115,10 @@ int main(int argc, char *argv[])
         }
     }
 
+    cout << "Starting processes..." << endl;
     Threaded_File_Sort(path);
+    cout << "Removing temporary files..." << endl;
+    boost::filesystem::remove_all("temp");
 
     return 0;
 }
@@ -178,73 +185,50 @@ void Rec_Threaded_Sort(vector<unsigned int> &Values, int begin, int end)
 
 void Threaded_File_Sort(string path)
 {
-    /*Finding out numbers of elements in the file*/
-    ifstream input(path, ios::ate);
-    unsigned long long int size = input.tellg()/sizeof(unsigned int);
-    input.close();
+    cout << "Reading from file..." << endl;
 
-    unsigned int t_num = sysconf(_SC_NPROCESSORS_ONLN);
-    thread threads[t_num];
-    int nodes [t_num+1];
-    nodes[0]=0;
+    /*
+    Splitting initial file into many smaller ones, 
+    elements in which are sorted
+    */
     File_Split(path);
-
-    /*input.open("Sorted_Array", ios::binary);
-
-    for (int i=0; i<t_num; i++)
-    {
-        nodes[i+1]=(i+1)*size/t_num;
-        threads[i] = thread(File_Sort, ref(input), nodes[i], nodes[i+1]);
-    }
-
-    for (int i=0; i<t_num; i++)
-    {
-        if (threads[i].joinable())
-            threads[i].join();
-    }*/
     
 }
 
-void File_Sort(ifstream &input, int begin, int end)
-{
-    for (int i=begin; i<end; i++)
-    {
-        input.seekg(i);
-        int cur_value;
-        input.read((char*)&cur_value, sizeof(cur_value));
-        for (int j=i; j>0; j--)
-        {
-            input.seekg(j);
-            int cur_position;
-            int next_position;
-            input.read((char*)&cur_position, sizeof(cur_position));
-            if (cur_value>cur_position)
-                break;
-            else
-            {
-                input.seekg(j-1);
-                input.read((char*)&next_position, sizeof(next_position));
-            }
-            
-        }
-    }
-}
-
-/*splits the file correctly, but when it goes for array less than 4 kb, threre are extra zeros*/
 void File_Split(string path)
 {
     ifstream input(path, ios::binary);
+
+    /*Creating temporary directory*/
     mkdir("temp",S_IRWXU);
     int f_num = 0;
-    vector<unsigned int> cur_values(1024);
-    //ifstream check("./temp/"+to_string(i), ios::ate);
+
+    /*Buffer*/
+    vector<unsigned int> cur_values(1024, INT32_MAX);
+
     while (input.peek()!=EOF)
     {
+        /*Reading values of size 4 kb, or less into buffer*/
         input.read((char*)&cur_values[0], cur_values.size()*sizeof(cur_values[0]));
+
+        /*Sorting values in buffer*/
         sort(cur_values.begin(),cur_values.end());
-        ofstream output("./temp/"+to_string(f_num), ios::binary | ios_base::app);
-        output.write((char*)&cur_values[0], cur_values.size()*sizeof(cur_values[0]));
+
+        /*Write sorted values in the file with number f_num*/
+        ofstream output("./temp/"+to_string(f_num), ios::binary);
+        for (auto value = cur_values.begin();value<cur_values.end();value++)
+        {
+            if(!(*value<INT32_MAX))
+                break;
+            output.write((char*)&(*value), sizeof(*value));
+        }
+            
         output.close();
+
+        /*
+        Repeat entire process for next part of values and next file,
+        until there are numbers in initial file
+        */
         f_num++;
     }
     input.close();
