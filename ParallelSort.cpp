@@ -55,7 +55,7 @@ end - second border
 */
 void Rec_Threaded_Sort(vector<unsigned int> &Values, int begin, int end);
 
-void Threaded_File_Sort(string path);
+void File_Sort(string path);
 
 /*
 Function splits initial file into many files with size of 4 kb (standart claster size),
@@ -72,6 +72,8 @@ file1 - path to the first file
 file2 - path to the second file
 */
 void File_Merge(string file1, string file2);
+
+void Threaded_Files_Merge_Sort(int delta);
 
 int main(int argc, char *argv[])
 {
@@ -123,7 +125,7 @@ int main(int argc, char *argv[])
     }
 
     cout << "Starting processes..." << endl;
-    Threaded_File_Sort(path);
+    File_Sort(path);
     cout << "Removing temporary files..." << endl;
     //boost::filesystem::remove_all("temp");
 
@@ -190,7 +192,7 @@ void Rec_Threaded_Sort(vector<unsigned int> &Values, int begin, int end)
     }
 }
 
-void Threaded_File_Sort(string path)
+void File_Sort(string path)
 {
     cout << "Reading from file..." << endl;
 
@@ -199,12 +201,24 @@ void Threaded_File_Sort(string path)
     elements in which are sorted
     */
     File_Split(path);
-    boost::filesystem::current_path("./temp");
-    File_Merge("0","1");
-    File_Merge("2","3");
-    File_Merge("0","2");
+    
+    cout << "Merging files..." << endl;
+    Threaded_Files_Merge_Sort(1);
     boost::filesystem::current_path("..");
     
+}
+
+void Threaded_Files_Merge_Sort(int delta)
+{
+    int file1=0;
+    while(boost::filesystem::exists(to_string(file1)) && boost::filesystem::exists(to_string(file1+delta)))
+    {
+        thread t(File_Merge,to_string(file1),to_string(file1+delta));
+        t.join();
+        file1+=2*delta;
+    }
+    if(boost::filesystem::exists(to_string(0+2*delta)))
+        Threaded_Files_Merge_Sort(2*delta);
 }
 
 void File_Merge(string file1, string file2)
@@ -218,12 +232,12 @@ void File_Merge(string file1, string file2)
     input2.read((char*)&cur_value2, sizeof(cur_value2));
     while(input1.peek()!=EOF && input2.peek()!=EOF)
     {
-        while (cur_value1<=cur_value2)
+        if (cur_value1<=cur_value2)
         {
             output.write((char*)&cur_value1, sizeof(cur_value1));
             input1.read((char*)&cur_value1, sizeof(cur_value1));
         }
-        while (cur_value1 > cur_value2)
+        else
         {
             output.write((char*)&cur_value2, sizeof(cur_value2));
             input2.read((char*)&cur_value2, sizeof(cur_value2));
@@ -274,5 +288,6 @@ void File_Split(string path)
         f_num++;
     }
     input.close();
+    boost::filesystem::current_path("./temp");
 }
 
