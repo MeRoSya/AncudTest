@@ -225,11 +225,7 @@ void File_Sort(string path)
     Splitting initial file into many smaller ones, 
     elements in which are sorted
     */
-    auto t1 = chrono::high_resolution_clock::now();
     File_Split(path);
-    auto t2 = chrono::high_resolution_clock::now();
-    cout << "Time elapsed: " << chrono::duration_cast<chrono::microseconds>(t2 - t1).count() << endl;
-    cout << "Sorting files..." << endl;
 
     /*Merging all sorted files*/
     Threaded_Files_Merge_Sort(1);
