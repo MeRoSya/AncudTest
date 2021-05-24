@@ -289,7 +289,7 @@ void Threaded_Files_Merge_Sort(int delta)
         any other (depends on which thread wrote it). So I rename that last element here
         */
         boost::filesystem::path p = boost::filesystem::current_path();
-        for (auto it = boost::filesystem::directory_iterator(p); it!=boost::filesystem::directory_iterator(); it++)
+        for (auto it = boost::filesystem::directory_iterator(p); it != boost::filesystem::directory_iterator(); it++)
         {
             boost::filesystem::rename(it->path().filename().string(), "0");
         }
@@ -345,7 +345,6 @@ void File_Split(string path)
     mkdir("temp", S_IRWXU);
     int f_num = 0;
 
-
     thread threads[2 * sysconf(_SC_NPROCESSORS_ONLN)];
 
     if (input.good())
@@ -383,7 +382,6 @@ void Threaded_File_Input(ifstream &input, int f_num)
 {
 
     vector<unsigned int> cur_values(1024, INT32_MAX);
-
 
     /*Checking if we finished reading the file*/
     mut.lock();

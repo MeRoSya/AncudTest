@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
                         throw invalid_argument("Invalid prefix value: is too big, or too small.");
                         n = 1;
                     }
-                    kilosize = pow(kilosize,n);
+                    kilosize = pow(kilosize, n);
                 }
                 else
                     throw invalid_argument("Invalid prefix type");
@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
     {
 
         /*Generating random value*/
-        unsigned int value = rand()%(INT32_MAX-1);
+        unsigned int value = rand() % (INT32_MAX - 1);
 
         output.write((char *)&value, sizeof(value));
     }
