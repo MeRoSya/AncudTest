@@ -10,6 +10,9 @@
 
 using namespace std;
 
+/*Mutex to synchronize threads, where is nessesery*/
+mutex mut;
+
 /*Functions' prototypes*/
 
 /* 
@@ -58,8 +61,9 @@ void Rec_Threaded_Sort(vector<unsigned int> &Values, int begin, int end);
 
 /*
 Making merge sort, using files. It is not really fast (Sorting of file with
-size of 100 MB is 24665 ms), but it uses fixed amount of RAM, so it can be used to
-sort really big files
+size of 100 MB is 24665 ms), but it uses fixed amount of RAM 
+(aproximatelly 4 kb * 16 (size of all buffers), but might use a little more 
+for other variables), so it can be used to sort really big files
 Args:
 path - path to file to sort
 */
@@ -67,7 +71,8 @@ void File_Sort(string path);
 
 /*
 Function splits initial file into many files with size of 4 kb (standart claster size),
-in which values are already sorted. It is slow, so it possibly may be made faster, by using async.
+in which values are already sorted. It is slow, but I don't know, how it could be
+made faster.
 Args:
 path - path to file to be splitted
 */
@@ -90,6 +95,14 @@ delta - differece in the name of
 neighbour files
 */
 void Threaded_Files_Merge_Sort(int delta);
+
+/*
+Function, performed by each thread
+Args:
+input - reference to input stream
+f_num - number of current file
+*/
+void Threaded_File_Input(ifstream &input, int f_num);
 
 int main(int argc, char *argv[])
 {
@@ -214,8 +227,10 @@ void File_Sort(string path)
     Splitting initial file into many smaller ones, 
     elements in which are sorted
     */
+    auto t1 = chrono::high_resolution_clock::now();
     File_Split(path);
-
+    auto t2 = chrono::high_resolution_clock::now();
+    cout << "Time elapsed: " << chrono::duration_cast<chrono::microseconds>(t2 - t1).count() << endl;
     cout << "Sorting files..." << endl;
 
     /*Merging all sorted files*/
@@ -319,33 +334,27 @@ void File_Split(string path)
     int f_num = 0;
 
     /*Buffer*/
-    vector<unsigned int> cur_values(1024, INT32_MAX);
+    thread threads[2 * sysconf(_SC_NPROCESSORS_ONLN)];
     if (input.good())
     {
         while (input.peek() != EOF)
         {
-            /*Reading values of size 4 kb, or less into buffer*/
-            input.read((char *)&cur_values[0], cur_values.size() * sizeof(cur_values[0]));
-
-            /*Sorting values in buffer*/
-            sort(cur_values.begin(), cur_values.end());
-
-            /*Write sorted values in the file with number f_num*/
-            ofstream output("./temp/" + to_string(f_num), ios::binary);
-            for (auto value = cur_values.begin(); value < cur_values.end(); value++)
+            /*
+            Creating 2*cores threads to read from file.
+            Or less, if there are not so much files
+            */
+            for (int i = 0; i < 2 * sysconf(_SC_NPROCESSORS_ONLN); i++)
             {
-                if (!(*value < INT32_MAX))
-                    break;
-                output.write((char *)&(*value), sizeof(*value));
+                threads[i] = thread(Threaded_File_Input, ref(input), f_num);
+                f_num++;
             }
 
-            output.close();
-
-            /*
-            Repeat entire process for next part of values and next file,
-            until there are numbers in initial file
-            */
-            f_num++;
+            /*Joining all threads*/
+            for (int i = 0; i < 2 * sysconf(_SC_NPROCESSORS_ONLN); i++)
+            {
+                if (threads[i].joinable())
+                    threads[i].join();
+            }
         }
         input.close();
         boost::filesystem::current_path("./temp");
@@ -354,5 +363,44 @@ void File_Split(string path)
     {
         cout << "Error, while trying to open the file" << endl;
         exit(1);
+    }
+}
+
+void Threaded_File_Input(ifstream &input, int f_num)
+{
+
+    vector<unsigned int> cur_values(1024, INT32_MAX);
+
+
+    /*Checking if we finished reading the file*/
+    mut.lock();
+
+    bool is_end = input.peek() != EOF;
+
+    mut.unlock();
+
+    if (is_end)
+    {
+        /*Reading values of size 4 kb, or less into buffer*/
+        mut.lock();
+
+        input.read((char *)&cur_values[0], cur_values.size() * sizeof(cur_values[0]));
+
+        mut.unlock();
+
+        /*Sorting values in buffer*/
+        sort(cur_values.begin(), cur_values.end());
+
+        /*Write sorted values in the file with number f_num*/
+        ofstream output("./temp/" + to_string(f_num), ios::binary);
+
+        for (auto value = cur_values.begin(); value < cur_values.end(); value++)
+        {
+            if (!(*value < INT32_MAX))
+                break;
+            output.write((char *)&(*value), sizeof(*value));
+        }
+
+        output.close();
     }
 }
