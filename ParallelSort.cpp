@@ -2,10 +2,8 @@
 #include <fstream>
 #include <thread>
 #include <vector>
-#include <cmath>
 #include <boost/filesystem.hpp>
 #include <sys/stat.h>
-#include <chrono>
 #include <getopt.h>
 
 using namespace std;
