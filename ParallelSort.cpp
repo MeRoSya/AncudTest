@@ -2,9 +2,11 @@
 #include <fstream>
 #include <thread>
 #include <vector>
-#include <getopt.h>
-
+#include <cmath>
+#include <boost/filesystem.hpp>
+#include <sys/stat.h>
 #include <chrono>
+#include <getopt.h>
 
 using namespace std;
 
@@ -54,10 +56,47 @@ end - second border
 */
 void Rec_Threaded_Sort(vector<unsigned int> &Values, int begin, int end);
 
+/*
+Making merge sort, using files. It is not really fast (Sorting of file with
+size of 100 MB is 24665 ms), but it uses fixed amount of RAM, so it can be used to
+sort really big files
+Args:
+path - path to file to sort
+*/
+void File_Sort(string path);
+
+/*
+Function splits initial file into many files with size of 4 kb (standart claster size),
+in which values are already sorted. It is slow, so it possibly may be made faster, by using async.
+Args:
+path - path to file to be splitted
+*/
+void File_Split(string path);
+
+/*
+Function merges two files
+Args:
+file1 - path to the first file
+file2 - path to the second file
+*/
+void File_Merge(string file1, string file2);
+
+/*
+Merges files in directory (making merge sort).
+For merging it uses 2xthr threads, there thr - number of cores
+(that number was experimentally confirmed as optimal).
+Args:
+delta - differece in the name of 
+neighbour files
+*/
+void Threaded_Files_Merge_Sort(int delta);
+
 int main(int argc, char *argv[])
 {
-    /*Creating variable, containing path to file
-    and intialize it with default value*/
+    /*
+    Creating variable, containing path to file
+    and intialize it with default value
+    */
 
     string path = "Array";
 
@@ -101,51 +140,8 @@ int main(int argc, char *argv[])
         }
     }
 
-    vector<unsigned int> Values(0);
-    ifstream input(path, ios::binary);
-
-    /*Checking, if file is open*/
-    if (input.good())
-    {
-        cout << "Reading from file..." << endl;
-        /*Read values from file*/
-        while (input.peek() != EOF)
-        {
-            unsigned int value;
-
-            /*Here can be errors, while reading from file, so
-            it must be handled*/
-            try
-            {
-                input.read((char *)&value, sizeof(value));
-                Values.push_back(value);
-            }
-            catch (...)
-            {
-                cout << "Error occured while reading the file" << endl;
-                return 1;
-            }
-        }
-        input.close();
-
-        /*Sorting*/
-        cout << "Sorting..." << endl;
-        Rec_Threaded_Sort(ref(Values), 0, Values.size());
-
-        /*Output to file*/
-        cout << "Writing to file..." << endl;
-
-        remove("Sorted_Array");
-        ofstream output("Sorted_Array", ios::binary);
-
-        for (auto item = Values.begin(); item < Values.end() - 2; item++)
-        {
-            output.write((char *)&(*item), sizeof(*item));
-        }
-        cout << "Done" << endl;
-    }
-    else
-        cout << "Error, while trying to open the file" << endl;
+    cout << "Starting processes..." << endl;
+    File_Sort(path);
 
     return 0;
 }
@@ -207,5 +203,156 @@ void Rec_Threaded_Sort(vector<unsigned int> &Values, int begin, int end)
     else
     {
         sort(Values.begin() + begin, Values.begin() + end);
+    }
+}
+
+void File_Sort(string path)
+{
+    cout << "Reading from file..." << endl;
+
+    /*
+    Splitting initial file into many smaller ones, 
+    elements in which are sorted
+    */
+    File_Split(path);
+
+    cout << "Sorting files..." << endl;
+
+    /*Merging all sorted files*/
+    Threaded_Files_Merge_Sort(1);
+
+    /*Copying sorted file from temporary dir to main dir*/
+    boost::filesystem::copy_file("0", "../Sorted_Array", boost::filesystem::copy_option::overwrite_if_exists);
+
+    /*Going back to main dir*/
+    boost::filesystem::current_path("..");
+
+    /*Removing temporary dir*/
+    cout << "Removing temporary files..." << endl;
+    boost::filesystem::remove_all("temp");
+}
+
+void Threaded_Files_Merge_Sort(int delta)
+{
+    /*Setting first file in sequence*/
+    int file1 = 0;
+
+    /*Setting array of threads*/
+    thread threads[2 * sysconf(_SC_NPROCESSORS_ONLN)];
+
+    /*Merging all files in directory*/
+    while (boost::filesystem::exists(to_string(file1)) && boost::filesystem::exists(to_string(file1 + delta)))
+    {
+        /*
+        Starting 2*cores processes to merge files.
+        Or less, if there are not so much files
+        */
+        for (int i = 0; i < 2 * sysconf(_SC_NPROCESSORS_ONLN); i++)
+        {
+            if (boost::filesystem::exists(to_string(file1)) && boost::filesystem::exists(to_string(file1 + delta)))
+                threads[i] = thread(File_Merge, to_string(file1), to_string(file1 + delta));
+            else
+                break;
+            file1 += 2 * delta;
+        }
+
+        /*Joining all threads*/
+        for (int i = 0; i < 2 * sysconf(_SC_NPROCESSORS_ONLN); i++)
+        {
+            if (threads[i].joinable())
+                threads[i].join();
+        }
+    }
+
+    /*If there is more than 1 file in directory, start recursion with greater delta*/
+    if (boost::filesystem::exists(to_string(0 + 2 * delta)))
+        Threaded_Files_Merge_Sort(2 * delta);
+}
+
+void File_Merge(string file1, string file2)
+{
+    /*Open input streams*/
+    ifstream input1(file1, ios::binary);
+    ifstream input2(file2, ios::binary);
+
+    /*Open output stream*/
+    ofstream output("mrg_" + file1, ios::binary);
+    unsigned int cur_value1;
+    unsigned int cur_value2;
+
+    /*Read first values*/
+    input1.read((char *)&cur_value1, sizeof(cur_value1));
+    input2.read((char *)&cur_value2, sizeof(cur_value2));
+
+    /*Making merging for files*/
+    while (input1.peek() != EOF && input2.peek() != EOF)
+    {
+        if (cur_value1 <= cur_value2)
+        {
+            output.write((char *)&cur_value1, sizeof(cur_value1));
+            input1.read((char *)&cur_value1, sizeof(cur_value1));
+        }
+        else
+        {
+            output.write((char *)&cur_value2, sizeof(cur_value2));
+            input2.read((char *)&cur_value2, sizeof(cur_value2));
+        }
+    }
+    input1.close();
+    input2.close();
+    output.close();
+
+    /*Removing initial files*/
+    boost::filesystem::remove(file1);
+    boost::filesystem::remove(file2);
+
+    /*Rename merged file into name of the first file*/
+    boost::filesystem::rename("mrg_" + file1, file1);
+}
+
+void File_Split(string path)
+{
+    ifstream input(path, ios::binary);
+
+    /*Creating temporary directory*/
+    mkdir("temp", S_IRWXU);
+    int f_num = 0;
+
+    /*Buffer*/
+    vector<unsigned int> cur_values(1024, INT32_MAX);
+    if (input.good())
+    {
+        while (input.peek() != EOF)
+        {
+            /*Reading values of size 4 kb, or less into buffer*/
+            input.read((char *)&cur_values[0], cur_values.size() * sizeof(cur_values[0]));
+
+            /*Sorting values in buffer*/
+            sort(cur_values.begin(), cur_values.end());
+
+            /*Write sorted values in the file with number f_num*/
+            ofstream output("./temp/" + to_string(f_num), ios::binary);
+            for (auto value = cur_values.begin(); value < cur_values.end(); value++)
+            {
+                if (!(*value < INT32_MAX))
+                    break;
+                output.write((char *)&(*value), sizeof(*value));
+            }
+
+            output.close();
+
+            /*
+            Repeat entire process for next part of values and next file,
+            until there are numbers in initial file
+            */
+            f_num++;
+        }
+        input.close();
+        boost::filesystem::current_path("./temp");
+    }
+    else
+    {
+        cout << "Error, while trying to open the file" << endl;
+        exit(1);
     }
 }
