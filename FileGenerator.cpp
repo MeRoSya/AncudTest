@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
     {
 
         /*Generating random value*/
-        unsigned int value = rand();
+        unsigned int value = rand()%(INT32_MAX-1);
 
         output.write((char *)&value, sizeof(value));
     }
