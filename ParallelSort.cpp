@@ -282,6 +282,18 @@ void Threaded_Files_Merge_Sort(int delta)
     /*If there is more than 1 file in directory, start recursion with greater delta*/
     if (boost::filesystem::exists(to_string(0 + 2 * delta)))
         Threaded_Files_Merge_Sort(2 * delta);
+    else
+    {
+        /*
+        In case, if original size is less than 4 kb, final file name can be not 0, but
+        any other (depends on which thread wrote it). So I rename that last element here
+        */
+        boost::filesystem::path p = boost::filesystem::current_path();
+        for (auto it = boost::filesystem::directory_iterator(p); it!=boost::filesystem::directory_iterator(); it++)
+        {
+            boost::filesystem::rename(it->path().filename().string(), "0");
+        }
+    }
 }
 
 void File_Merge(string file1, string file2)
@@ -333,8 +345,9 @@ void File_Split(string path)
     mkdir("temp", S_IRWXU);
     int f_num = 0;
 
-    /*Buffer*/
+
     thread threads[2 * sysconf(_SC_NPROCESSORS_ONLN)];
+
     if (input.good())
     {
         while (input.peek() != EOF)
