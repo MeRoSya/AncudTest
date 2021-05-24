@@ -55,7 +55,6 @@ end - second border
 */
 void Rec_Threaded_Sort(vector<unsigned int> &Values, int begin, int end);
 
-
 void Threaded_File_Sort(string path);
 
 /*
@@ -65,6 +64,14 @@ Args:
 path - path to file to be splitted
 */
 void File_Split(string path);
+
+/*
+Function merges two files
+Args:
+file1 - path to the first file
+file2 - path to the second file
+*/
+void File_Merge(string file1, string file2);
 
 int main(int argc, char *argv[])
 {
@@ -118,7 +125,7 @@ int main(int argc, char *argv[])
     cout << "Starting processes..." << endl;
     Threaded_File_Sort(path);
     cout << "Removing temporary files..." << endl;
-    boost::filesystem::remove_all("temp");
+    //boost::filesystem::remove_all("temp");
 
     return 0;
 }
@@ -192,7 +199,42 @@ void Threaded_File_Sort(string path)
     elements in which are sorted
     */
     File_Split(path);
+    boost::filesystem::current_path("./temp");
+    File_Merge("0","1");
+    File_Merge("2","3");
+    File_Merge("0","2");
+    boost::filesystem::current_path("..");
     
+}
+
+void File_Merge(string file1, string file2)
+{
+    ifstream input1(file1, ios::binary);
+    ifstream input2(file2, ios::binary);
+    ofstream output("mrg_"+file1, ios::binary);
+    unsigned int cur_value1;
+    unsigned int cur_value2;
+    input1.read((char*)&cur_value1, sizeof(cur_value1));
+    input2.read((char*)&cur_value2, sizeof(cur_value2));
+    while(input1.peek()!=EOF && input2.peek()!=EOF)
+    {
+        while (cur_value1<=cur_value2)
+        {
+            output.write((char*)&cur_value1, sizeof(cur_value1));
+            input1.read((char*)&cur_value1, sizeof(cur_value1));
+        }
+        while (cur_value1 > cur_value2)
+        {
+            output.write((char*)&cur_value2, sizeof(cur_value2));
+            input2.read((char*)&cur_value2, sizeof(cur_value2));
+        }
+    }
+    input1.close();
+    input2.close();
+    output.close();
+    boost::filesystem::remove(file1);
+    boost::filesystem::remove(file2);
+    boost::filesystem::rename("mrg_"+file1, file1);
 }
 
 void File_Split(string path)
