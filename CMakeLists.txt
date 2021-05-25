@@ -27,8 +27,8 @@ add_test(FileGenerator_Size_Invalid FileGenerator -s fsfs -p 1)
 add_test(FileGenerator_Size_Null FileGenerator -s 0)
 add_test(FileGenerator_Size_Prefix_Invalid FileGenerator -s fsfs -p fds)
 add_test(FileGenerator_Size_Prefix_Invalid_OutOfRange FileGenerator -s fsfs -p 10)
-add_test(ParallelSort_Path_Invalid ParallelSort -f fsfs)
-add_test(ParallelSort_Path_Null ParallelSort -f)
+add_test(ParallelSort_InputPath_Invalid ParallelSort -i fsfs)
+add_test(ParallelSort_InputPath_Null ParallelSort -i)
 add_test(ParallelSort_Regular_Sort FileGenerator ParallelSort)
 add_test(SortCheck_Checked_Sort SortCheck)
 add_test(SortCheck_Checked_UnSort SortCheck -f Array)
@@ -45,10 +45,10 @@ set_tests_properties(FileGenerator_Size_Prefix_Invalid PROPERTIES
 PASS_REGULAR_EXPRESSION "Invalid size;Default size will be used;Invalid prefix type;Default prefix will be used")
 set_tests_properties(FileGenerator_Size_Prefix_Invalid_OutOfRange PROPERTIES
 PASS_REGULAR_EXPRESSION "Invalid size;Default size will be used;Invalid prefix value: is too big, or too small.;Default prefix will be used")
-set_tests_properties(ParallelSort_Path_Invalid PROPERTIES
-PASS_REGULAR_EXPRESSION "Error, while trying to open the file")
-set_tests_properties(ParallelSort_Path_Null PROPERTIES
-PASS_REGULAR_EXPRESSION "ParallelSort: option requires an argument -- f")
+set_tests_properties(ParallelSort_InputPath_Invalid PROPERTIES
+PASS_REGULAR_EXPRESSION "Input file doesn't exist")
+set_tests_properties(ParallelSort_InputPath_Null PROPERTIES
+PASS_REGULAR_EXPRESSION "ParallelSort: option requires an argument -- i")
 set_tests_properties(ParallelSort_Regular_Sort PROPERTIES
 FAIL_REGULAR_EXPRESSION "Error, while trying to open the file")
 set_tests_properties(SortCheck_Checked_Sort PROPERTIES
