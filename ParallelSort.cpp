@@ -11,11 +11,42 @@
 
 using namespace std;
 
-/*Functions' prototypes*/
+/*Interface to use in all File-classes*/
+class IFile
+{
+public:
+    virtual void Read() = 0;
+    virtual void Sort() = 0;
+    virtual void Write() = 0;
+};
 
-void File_Sort(string input_path, string output_path);
+/*Class which is used to work with files using file-mapping*/
+class MappedFile : public IFile
+{
 
-void Rec_Threaded_Sort(unsigned int *&ptr, int begin, int end);
+    static void Rec_Threaded_Sort(unsigned int *&ptr, int begin, int end);
+
+protected:
+    unsigned int *Array;
+    unsigned long long int size;
+    string input_path;
+    string output_path;
+
+public:
+    /*Constructor*/
+    MappedFile(string input_path = "./Array", string output_path = "./Sorted_Array");
+
+    /*Implementing interface's methods*/
+    virtual void Read();
+    void Sort();
+    virtual void Write();
+
+    /*Additional method to implement reading of the any file, not only input*/
+    void Read(string path);
+
+    /*Destructor*/
+    virtual ~MappedFile();
+};
 
 int main(int argc, char *argv[])
 {
@@ -82,54 +113,89 @@ int main(int argc, char *argv[])
     }
 
     cout << "Starting processes..." << endl;
-    File_Sort(input_path, output_path);
+    MappedFile file(input_path, output_path);
+    file.Sort();
     return 0;
 }
 
-/*Implementation of functions*/
+/*Implementation of class methods*/
 
-void File_Sort(string input_path, string output_path)
+MappedFile::MappedFile(string input_path, string output_path)
 {
+    this->input_path = input_path;
+    this->output_path = output_path;
     try
     {
-        boost::filesystem::copy(input_path, output_path, boost::filesystem::copy_options::overwrite_existing);
+        this->size = boost::filesystem::file_size(this->input_path) / sizeof(unsigned int);
     }
-    catch(boost::filesystem::filesystem_error ex) 
+    catch (boost::filesystem::filesystem_error ex)
     {
         cout << "Error occurred: " << ex.what();
         exit(1);
     }
-    long double number_of_bytes = boost::filesystem::file_size(output_path);
-    unsigned long long int sizes = number_of_bytes / sizeof(unsigned int);
-    long double max_read_size = pow(2, sizeof(void *) * 8);
-    int number_of_parts;
-    if (number_of_bytes > max_read_size)
-        number_of_parts = max_read_size / number_of_bytes;
-    else
-        number_of_parts = 1;
+    this->Array = nullptr;
+}
+
+void MappedFile::Read(string path)
+{
     int fd;
-    if ((fd = open(output_path.c_str(), O_RDWR)))
+    if ((fd = open(path.c_str(), O_RDWR)))
     {
-        for (int i = 0; i < number_of_parts; i++)
-        {
-            cout << "Reading file..." << endl;
-            unsigned int *ptr = (unsigned int *)mmap(0, number_of_bytes, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-            cout << "Sorting..." << endl;
-            Rec_Threaded_Sort(ref(ptr), 0, sizes);
-        }
+        cout << "Reading the file " << path << endl;
+        Array = (unsigned int *)mmap(0, size * sizeof(unsigned int), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+        madvise(Array, size, POSIX_MADV_WILLNEED | POSIX_MADV_SEQUENTIAL);
     }
     else
     {
-        cout << "Error occurred, while trying to sort the file" << endl;
+        cout << "Error occurred, while trying to read the file" << endl;
         exit(1);
     }
 }
 
-void Rec_Threaded_Sort(unsigned int *&ptr, int begin, int end)
+void MappedFile::Read()
+{
+    Read(input_path);
+}
+
+void MappedFile::Write()
+{
+    if (boost::filesystem::space(boost::filesystem::current_path()).available > size * sizeof(unsigned int))
+        try
+        {
+            cout << "Writing to the file " << output_path << endl;
+            boost::filesystem::copy(input_path, output_path, boost::filesystem::copy_options::overwrite_existing);
+        }
+        catch (boost::filesystem::filesystem_error ex)
+        {
+            cout << "Error occurred, while trying to write the file: " << ex.what();
+            exit(1);
+        }
+    else
+    {
+        cout << "Error occurred: Not enough disk space to create the file's copy" << endl;
+        exit(1);
+    }
+}
+
+void MappedFile::Sort()
+{
+
+    if (input_path != output_path)
+    {
+        this->Write();
+        this->Read(output_path);
+    }
+    else
+        this->Read();
+    cout << "Sorting the file " << output_path << endl;
+    Rec_Threaded_Sort(ref(Array), 0, size);
+}
+
+void MappedFile::Rec_Threaded_Sort(unsigned int *&ptr, int begin, int end)
 {
     static atomic_int t_num(0);
     t_num++;
-    if (!(t_num > thread::hardware_concurrency() / 2) && (end > pow(2,30)-1))
+    if (!(t_num > thread::hardware_concurrency() / 2) && (end > pow(2, 30) - 1))
     {
         thread t(Rec_Threaded_Sort, ref(ptr), 0, end / 2);
         t.join();
@@ -140,4 +206,8 @@ void Rec_Threaded_Sort(unsigned int *&ptr, int begin, int end)
     {
         sort(ptr + begin, ptr + end);
     }
+}
+
+MappedFile::~MappedFile()
+{
 }
