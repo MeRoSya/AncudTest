@@ -8,11 +8,13 @@ Program sorting an array of unsigned int from binary file and write it to anothe
 
 ## Usage
 
-*"ParallelSort"* performs sorting of array. Default file to sort: file *"Array"* from the same directory.
+*"ParallelSort"* performs sorting of array. Default file to sort: *"./Array"*. Default file to output: *"./Sorted_Array"*
+
 
 Command line options:
 * -h [ --help ] shows help
-* -f [ --file ] arg sets path to file
+* -o [ --ofile ] arg\tA path to the output file
+* -i [ --ifile ] arg A path to the input file
 
 *"FileGenerator"* generates file of needed size. Default size: 1 KB
 
@@ -35,3 +37,41 @@ Command line options:
 * -f [ --file ] arg sets path to file
 
 Using CTest in CMake to test
+
+## Algorithm info
+Program uses modified merge sort and *file mapping*.<br> 
+So max size of sorted file is limited only by number of possible adresses (2^32 for x32 systems and 2^64 for x64 systems).<br>
+So the biggest possible file to sort on x64 machine is *4 exabytes* and on x32 machine - 2 Gb. <br>
+
+ Sorting time (Tested with min part size 1 element):
+    
+    1 Gb:
+    Sequential (using only std::sort()): 25371 ms
+    Threaded (using MappedFile::Rec_Threaded_Sort()): 17011 ms
+
+    2 Gb:
+    Sequential (using only std::sort()): 60625 ms
+    Threaded (using MappedFile::Rec_Threaded_Sort()): 40513 ms
+
+    4 Gb:
+    Sequential (using only std::sort()): 195101 ms
+    Threaded (using MappedFile::Rec_Threaded_Sort()): 168092 ms
+
+  Best part size - size, which is big enough and its time of sequential sorting is lesser than threaded or equal to it:
+
+    1 Mb:
+    Sequential (using only std::sort()): 16 ms
+    Threaded (using MappedFile::Rec_Threaded_Sort()): 46 ms
+
+    2 Mb:
+    Sequential (using only std::sort()): 34 ms
+    Threaded (using MappedFile::Rec_Threaded_Sort()): 34 ms
+
+    4 Mb:
+    Sequential (using only std::sort()): 71 ms
+    Threaded (using MappedFile::Rec_Threaded_Sort()): 63 ms
+
+    As you can see, the optimal minimal size of part is 2 Mb
+    
+ ## Updating possibilities
+ There is the interface IFile, which can be used to create other emplimentations of file sorting
