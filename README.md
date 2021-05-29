@@ -16,7 +16,7 @@ Command line options:
 * -o [ --ofile ] arg A path to the output file
 * -i [ --ifile ] arg A path to the input file
 
-*"FileGenerator"* generates file of needed size. Default size: 1 KB
+*"FileGenerator"* generates a file of the needed size. Default size: 1 KB
 
 Command line options:
 * -h [ --help ] Shows help
@@ -30,7 +30,7 @@ Prefixes:<br>
 "4" - TeraBytes<br>
 "5" - PetaBytes<br>
 
-*"SortCheck"* checks if numbers in file are sorted. Default file to check: file *"Sorted_Array"* from the same directory
+*"SortCheck"* checks if numbers in the file are sorted. Default file to check: file *"./Sorted_Array"*
 
 Command line options:
 * -h [ --help ] Shows help
@@ -39,9 +39,9 @@ Command line options:
 Using CTest in CMake to test
 
 ## Algorithm info
-Program uses modified merge sort and *file mapping*.<br> 
-So max size of sorted file is limited only by number of possible adresses (2^32 for x32 systems and 2^64 for x64 systems).<br>
-So the biggest possible file to sort on x64 machine is *4 exabytes* and on x32 machine - 2 Gb. <br>
+The program uses modified merge sort and *file mapping*.<br> 
+So the max size of the file, which is to sort, is limited only by the number of possible adresses (2^32 for x32 systems and 2^64 for x64 systems).<br>
+So the biggest possible file to sort on x64 machine is *4 exabytes* and on x32 machine - *2 Gb*. <br>
 
  Sorting time (Tested with min part size 1 element):
     
@@ -57,7 +57,7 @@ So the biggest possible file to sort on x64 machine is *4 exabytes* and on x32 m
     Sequential (using only std::sort()): 195101 ms
     Threaded (using MappedFile::Rec_Threaded_Sort()): 168092 ms
 
-  Best part size - size, which is big enough and its time of sequential sorting is lesser than threaded or equal to it:
+  The best part size - the size, which is big enough and its time of sequential sorting is lesser than threaded or equal to it:
 
     1 Mb:
     Sequential (using only std::sort()): 16 ms
