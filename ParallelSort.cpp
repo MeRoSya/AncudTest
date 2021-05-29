@@ -10,7 +10,7 @@
 
 using namespace std;
 
-/*Interface to use in all File-classes*/
+/*The interface to use in all File-sort classes*/
 class IFile
 {
 public:
@@ -80,8 +80,8 @@ public:
 int main(int argc, char *argv[])
 {
     /*
-    Creating variables, which contains paths to files
-    and initialize them with default value
+    Creating variables, which contain paths to the files
+    and initializing them with default values
     */
 
     string input_path = "./Array";
@@ -116,23 +116,23 @@ int main(int argc, char *argv[])
             return 0;
             break;
 
-        /*Setting path to input file*/
+        /*Setting the path to the input file*/
         case 'i':
             input_path = optarg;
             if (!boost::filesystem::exists(input_path))
             {
-                cout << "Input file doesn't exist" << endl;
+                cout << "The input file doesn't exist" << endl;
                 exit(1);
             }
             break;
 
-        /*Setting path to input file*/
+        /*Setting the path to the output file*/
         case 'o':
             output_path = optarg;
             break;
 
         case '?':
-            /*Error already printed by getopt_long*/
+            /*Error is already printed by getopt_long*/
             return 1;
             break;
 
@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-/*Implementation of class methods*/
+/*Implementation of the methods of the class*/
 
 MappedFile::MappedFile(string input_path, string output_path)
 {
@@ -188,7 +188,7 @@ void MappedFile::Read()
 
 void MappedFile::Write()
 {
-    /*Checking, if there are enough disk space available to create a copy of the initial file*/
+    /*Checking, if there is enough disk space available to create a copy of the initial file*/
     if (boost::filesystem::space(boost::filesystem::current_path()).available > size * sizeof(unsigned int))
         try
         {
@@ -213,9 +213,9 @@ void MappedFile::Sort()
 {
 
     /*
-    Setting output file and copy data from input
-    file to it. If input and output are the same files
-    only read the input
+    Sets the output file and copy data from the input
+    file to it. If the input and  the output are the same files
+    only reads the input
     */
     if (input_path != output_path)
     {

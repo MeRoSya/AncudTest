@@ -40,18 +40,18 @@ PASS_REGULAR_EXPRESSION "Invalid prefix value: is too big, or too small.;Default
 set_tests_properties(FileGenerator_Size_Invalid PROPERTIES
 PASS_REGULAR_EXPRESSION "Invalid size;Default size will be used")
 set_tests_properties(FileGenerator_Size_Null PROPERTIES
-PASS_REGULAR_EXPRESSION "Size cannot be 0;Default size will be used")
+PASS_REGULAR_EXPRESSION "The size cannot be 0;Default size will be used")
 set_tests_properties(FileGenerator_Size_Prefix_Invalid PROPERTIES
 PASS_REGULAR_EXPRESSION "Invalid size;Default size will be used;Invalid prefix type;Default prefix will be used")
 set_tests_properties(FileGenerator_Size_Prefix_Invalid_OutOfRange PROPERTIES
 PASS_REGULAR_EXPRESSION "Invalid size;Default size will be used;Invalid prefix value: is too big, or too small.;Default prefix will be used")
 set_tests_properties(ParallelSort_InputPath_Invalid PROPERTIES
-PASS_REGULAR_EXPRESSION "Input file doesn't exist")
+PASS_REGULAR_EXPRESSION "The input file doesn't exist")
 set_tests_properties(ParallelSort_InputPath_Null PROPERTIES
 PASS_REGULAR_EXPRESSION "ParallelSort: option requires an argument -- i")
 set_tests_properties(ParallelSort_Regular_Sort PROPERTIES
-FAIL_REGULAR_EXPRESSION "Error, while trying to open the file")
+FAIL_REGULAR_EXPRESSION "An error occurred, while trying to open the file")
 set_tests_properties(SortCheck_Checked_Sort PROPERTIES
-PASS_REGULAR_EXPRESSION "Array is sorted")
+PASS_REGULAR_EXPRESSION "The array is sorted")
 set_tests_properties(SortCheck_Checked_UnSort PROPERTIES
-PASS_REGULAR_EXPRESSION "Array is not sorted")
+PASS_REGULAR_EXPRESSION "The array is not sorted")

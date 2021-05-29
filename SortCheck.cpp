@@ -7,8 +7,8 @@ using namespace std;
 int main(int argc, char *argv[])
 {
 
-    /*Creating variable, containing path to file
-    and intialize it with default value*/
+    /*Creating a variable, containing the path to the file
+    and initializing it with a default value*/
 
     string path = "Sorted_Array";
 
@@ -37,13 +37,13 @@ int main(int argc, char *argv[])
             return 0;
             break;
 
-        /*Setting path to file*/
+        /*Setting the path to file*/
         case 'f':
             path = optarg;
             break;
 
         case '?':
-            /*Error already printed by getopt_long*/
+            /*Error is already printed by getopt_long*/
             return 1;
             break;
 
@@ -52,32 +52,32 @@ int main(int argc, char *argv[])
         }
     }
 
-    /*Variable, containing
+    /*A variable, which contains the
     previous value, read from file*/
 
     unsigned int comp = 0;
     ifstream input(path, ios::binary);
 
-    /*Checking, if file is open*/
+    /*Checking, if the file is open*/
     if (input.good())
     {
-        /*Read values from file*/
+        /*Read values from the file*/
         while (input.peek() != EOF)
         {
             unsigned int value;
 
-            /*Here can be errors, while reading from file (broken file, for example), so
-            it must be handled*/
+            /*Here can be errors while reading from the file (broken file, for example), so
+            they must be handled*/
             try
             {
                 input.read((char *)&value, sizeof(value));
 
-                /*Checking if current value is lesser than previous value.
-                if it is so, array isn't sorted and we can finish programm.*/
+                /*Checking if the current value is lesser than the previous value.
+                if it is so, the array isn't sorted and we can finish the program.*/
                 if (value < comp)
                 {
 
-                    cout << "Array is not sorted" << endl;
+                    cout << "The array is not sorted" << endl;
                     return 1;
                 }
 
@@ -85,13 +85,13 @@ int main(int argc, char *argv[])
             }
             catch (...)
             {
-                cout << "Error occured while reading the file" << endl;
+                cout << "An error occurred while reading the file" << endl;
                 return 1;
             }
         }
-        cout << "Array is sorted" << endl;
+        cout << "The array is sorted" << endl;
     }
     else
-        cout << "Error, while trying to open the file" << endl;
+        cout << "An error occurred, while trying to open the file" << endl;
     return 0;
 }
