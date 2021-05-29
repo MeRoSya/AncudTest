@@ -249,7 +249,7 @@ void MappedFile::Rec_Threaded_Sort(unsigned int *&ptr, int begin, int end)
 
         /*
         Following the description of std::inplace_merge() it uses additional RAM ONLY,
-        if it is possible. So there can't be the situation, when it is used more memory,
+        if it is possible. So there can't be the situation, when the program is using more memory,
         than is available
         */
         inplace_merge(ptr + begin, ptr + end / 2, ptr + end);
