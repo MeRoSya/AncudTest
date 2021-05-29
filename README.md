@@ -1,26 +1,26 @@
 # AncudTest
 
-Test tasks
+Test task
 
 ## Concept
 
-Program sorting an array of unsigned int from binary file and write it to another file
+The program sorts an array of unsigned ints from a binary file and write it to another file
 
 ## Usage
 
-*"ParallelSort"* performs sorting of array. Default file to sort: *"./Array"*. Default file to output: *"./Sorted_Array"*
+*"ParallelSort"* performs sorting of an array. Default file to sort: *"./Array"*. Default file to output: *"./Sorted_Array"*
 
 
 Command line options:
-* -h [ --help ] shows help
-* -o [ --ofile ] arg\tA path to the output file
+* -h [ --help ] Shows help
+* -o [ --ofile ] arg A path to the output file
 * -i [ --ifile ] arg A path to the input file
 
 *"FileGenerator"* generates file of needed size. Default size: 1 KB
 
 Command line options:
-* -h [ --help ] shows help
-* -s [ --size ] arg Input size of generating file            
+* -h [ --help ] Shows help
+* -s [ --size ] arg Size of generating file            
 * -p [ --prefix ] arg Prefix
 
 Prefixes:<br>
@@ -33,8 +33,8 @@ Prefixes:<br>
 *"SortCheck"* checks if numbers in file are sorted. Default file to check: file *"Sorted_Array"* from the same directory
 
 Command line options:
-* -h [ --help ] shows help
-* -f [ --file ] arg sets path to file
+* -h [ --help ] Shows help
+* -f [ --file ] Arg sets path to file
 
 Using CTest in CMake to test
 
