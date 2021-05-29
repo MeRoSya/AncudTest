@@ -64,19 +64,19 @@ int main(int argc, char *argv[])
         case 's':
             try
             {
-                /*Not number argument for size makes no sence, so it must be handled as error*/
+                /*Not a number argument for a size makes no sense, so it must be handled as an error*/
                 if (Is_Number(optarg))
                 {
                     unsigned int n = atoi(optarg);
 
                     /*
-                    Size with negative value makes no sence, so it must 
-                    be handled as error. But it is already checked in Is_Number function, 
-                    so it is unneseserry to check it here. Also it is pointless for size
+                    A size with a negative value makes no sense, so it must 
+                    be handled as error. But it is already checked in the Is_Number() function, 
+                    so it is unnecessary to check it here. Also it is pointless for a size
                     to be equal 0. So that case must be handled too
                     */
                     if (n == 0)
-                        throw(invalid_argument("Size cannot be 0"));
+                        throw(invalid_argument("The size cannot be equal 0"));
                     else
                         size = n;
                 }
@@ -94,12 +94,12 @@ int main(int argc, char *argv[])
         case 'p':
             try
             {
-                /*Not number argument for prefix makes no sence, so it must be handled as error*/
+                /*Not a number argument for a prefix makes no sense, so it must be handled as an error*/
                 if (Is_Number(optarg))
                 {
                     unsigned int n = atoi(optarg);
 
-                    /*Prefix with value not in [1;5] makes no sence, so it must be handled as error*/
+                    /*Prefix with value not in [1;5] makes no sense, so it must be handled as error*/
                     if ((n < 1) || (n > 5))
                     {
                         throw invalid_argument("Invalid prefix value: is too big, or too small.");
@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
             break;
 
         case '?':
-            /*Error already printed by getopt_long*/
+            /*Error is already printed by getopt_long*/
             return 1;
             break;
 
@@ -140,8 +140,8 @@ int main(int argc, char *argv[])
     for (int i = 0; i < size; i++)
     {
 
-        /*Generating random value*/
-        unsigned int value = rand() % (INT32_MAX - 1);
+        /*Generating a random value*/
+        unsigned int value = rand();
 
         output.write((char *)&value, sizeof(value));
     }
@@ -158,7 +158,7 @@ bool Is_Number(char *value)
     string str(value);
     for (auto item = str.begin(); item < str.end(); item++)
     {
-        /*Checking current symbol to be digit*/
+        /*Checking the current symbol to be a digit*/
         if (!isdigit(*item))
         {
             return false;

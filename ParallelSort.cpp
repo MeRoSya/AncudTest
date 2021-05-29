@@ -1,68 +1,87 @@
 #include <iostream>
 #include <fstream>
 #include <thread>
-#include <vector>
+#include <algorithm>
 #include <boost/filesystem.hpp>
-#include <sys/stat.h>
+#include <sys/mman.h>
+#include <fcntl.h>
 #include <getopt.h>
+#include <cmath>
 
 using namespace std;
 
-/*Mutex to synchronize threads, where is nessesery*/
-mutex mut;
+/*The interface to use in all File-sort classes*/
+class IFile
+{
+public:
+    virtual void Read() = 0;
+    virtual void Sort() = 0;
+    virtual void Write() = 0;
+};
 
-/*Functions' prototypes*/
+/*Class which is used to work with files using file-mapping*/
+class MappedFile : public IFile
+{
 
-/*
-Making merge sort, using files. It is not really fast (Sorting of file with
-size of 100 MB is 24665 ms), but it uses fixed amount of RAM 
-(aproximatelly 4 kb * 16 (size of all buffers), but might use a little more 
-for other variables), so it can be used to sort really big files
-Args:
-path - path to file to sort
-*/
-void File_Sort(string input_path, string output_path);
+    /*
+    Function, which sorts array of values using modified merge-sort.
+    Args:
+    ptr - Array
+    begin - Start point of sorting
+    end - End point of sorting
+    */
+    static void Rec_Threaded_Sort(unsigned int *&ptr, int begin, int end);
 
-/*
-Function splits initial file into many files with size of 4 kb (standart claster size),
-in which values are already sorted. It is slow, but I don't know, how it could be
-made faster.
-Args:
-path - path to file to be splitted
-*/
-void File_Split(string path);
+protected:
 
-/*
-Function merges two files
-Args:
-file1 - path to the first file
-file2 - path to the second file
-*/
-void File_Merge(string file1, string file2);
+    /*The pointer to the begin of the information in the file*/
+    unsigned int *Array;
 
-/*
-Merges files in directory (making merge sort).
-For merging it uses 2xthr threads, there thr - number of cores
-(that number was experimentally confirmed as optimal).
-Args:
-delta - differece in the name of 
-neighbour files
-*/
-void Threaded_Files_Merge_Sort(int delta);
+    /*The size of the file (the number of elements)*/
+    unsigned long long int size;
 
-/*
-Function, performed by each thread
-Args:
-input - reference to input stream
-f_num - number of current file
-*/
-void Threaded_File_Input(ifstream &input, int f_num);
+    /*The file descriptor*/
+    int fd;
+
+    /*The path to the input file*/
+    string input_path;
+
+    /*The path to the output file*/
+    string output_path;
+
+public:
+    /*Constructor*/
+    MappedFile(string input_path = "./Array", string output_path = "./Sorted_Array");
+
+    /*Implementing interface's methods*/
+
+    /*Reads the input file*/
+    virtual void Read();
+
+    /*Sorts data in the output file*/
+    void Sort();
+
+    /*
+    Writes data to the output file
+    (copies the input file)
+    */
+    virtual void Write();
+    
+    /*
+    Additional method to implement reading of any file, not only the input one.
+    Sets the pointer Array to point on the begin of the info in the file path.
+    */
+    void Read(string path);
+
+    /*Destructor*/
+    virtual ~MappedFile();
+};
 
 int main(int argc, char *argv[])
 {
     /*
-    Creating variable, containing path to file
-    and intialize it with default value
+    Creating variables, which contain paths to the files
+    and initializing them with default values
     */
 
     string input_path = "./Array";
@@ -74,7 +93,7 @@ int main(int argc, char *argv[])
 
         static struct option long_options[] = {{"help", no_argument, 0, 'h'},
                                                {"ifile", required_argument, 0, 'i'},
-                                               {"ofile" , required_argument, 0, 'o'}};
+                                               {"ofile", required_argument, 0, 'o'}};
         int option_index = 0;
 
         int cur_opt = getopt_long(argc, argv, "hi:o:", long_options, &option_index);
@@ -89,25 +108,31 @@ int main(int argc, char *argv[])
         case 'h':
             cout << "Options list:" << endl;
             cout << "-h [ --help ]\t\tShows help" << endl;
-            cout << "-if [ --ifile ] arg\tInput path to the file with data" << endl;
-            cout << "if -if flag isn't used, program will try to use default file ./Array" << endl;
+            cout << "-i [ --ifile ] arg\tA path to the input file" << endl;
+            cout << "if -i flag isn't used, program will try to use default file ./Array" << endl;
             cout << endl;
-            cout << "-of [ --ofile ] arg\tPath to the output file" << endl;
-            cout << "if -of flag isn't used, program will try to use default file ./Sorted_Array" << endl;
+            cout << "-o [ --ofile ] arg\tA path to the output file" << endl;
+            cout << "if -o flag isn't used, program will try to use default file ./Sorted_Array" << endl;
             return 0;
             break;
 
-        /*Setting path to file*/
+        /*Setting the path to the input file*/
         case 'i':
             input_path = optarg;
+            if (!boost::filesystem::exists(input_path))
+            {
+                cout << "The input file doesn't exist" << endl;
+                exit(1);
+            }
             break;
-        
+
+        /*Setting the path to the output file*/
         case 'o':
             output_path = optarg;
             break;
 
         case '?':
-            /*Error already printed by getopt_long*/
+            /*Error is already printed by getopt_long*/
             return 1;
             break;
 
@@ -117,202 +142,125 @@ int main(int argc, char *argv[])
     }
 
     cout << "Starting processes..." << endl;
-    File_Sort(input_path, output_path);
-
+    MappedFile file(input_path, output_path);
+    file.Sort();
     return 0;
 }
 
-/*Implementation of functions*/
+/*Implementation of the methods of the class*/
 
-void File_Sort(string input_path, string output_path)
+MappedFile::MappedFile(string input_path, string output_path)
 {
-    cout << "Reading from file..." << endl;
-
-    /*
-    Splitting initial file into many smaller ones, 
-    elements in which are sorted
-    */
-    File_Split(input_path);
-
-    /*Merging all sorted files*/
-    Threaded_Files_Merge_Sort(1);
-
-    /*Going back to main dir*/
-    boost::filesystem::current_path("..");
-
-    /*Copying sorted file from temporary dir to main dir*/
-    boost::filesystem::copy_file("./temp/0", output_path, boost::filesystem::copy_option::overwrite_if_exists);
-
-    /*Removing temporary dir*/
-    cout << "Removing temporary files..." << endl;
-    boost::filesystem::remove_all("temp");
+    this->input_path = input_path;
+    this->output_path = output_path;
+    try
+    {
+        this->size = boost::filesystem::file_size(this->input_path) / sizeof(unsigned int);
+    }
+    catch (boost::filesystem::filesystem_error ex)
+    {
+        cout << "An error occurred: " << ex.what() << endl;
+        exit(1);
+    }
+    this->Array = nullptr;
 }
 
-void Threaded_Files_Merge_Sort(int delta)
+void MappedFile::Read(string path)
 {
-    /*Setting first file in sequence*/
-    int file1 = 0;
-
-    /*Setting array of threads*/
-    thread threads[2 * sysconf(_SC_NPROCESSORS_ONLN)];
-
-    /*Merging all files in directory*/
-    while (boost::filesystem::exists(to_string(file1)) && boost::filesystem::exists(to_string(file1 + delta)))
+    
+    if ((fd = open(path.c_str(), O_RDWR)))
     {
-        /*
-        Starting 2*cores processes to merge files.
-        Or less, if there are not so much files
-        */
-        for (int i = 0; i < 2 * sysconf(_SC_NPROCESSORS_ONLN); i++)
-        {
-            if (boost::filesystem::exists(to_string(file1)) && boost::filesystem::exists(to_string(file1 + delta)))
-                threads[i] = thread(File_Merge, to_string(file1), to_string(file1 + delta));
-            else
-                break;
-            file1 += 2 * delta;
-        }
-
-        /*Joining all threads*/
-        for (int i = 0; i < 2 * sysconf(_SC_NPROCESSORS_ONLN); i++)
-        {
-            if (threads[i].joinable())
-                threads[i].join();
-        }
-    }
-
-    /*If there is more than 1 file in directory, start recursion with greater delta*/
-    if (boost::filesystem::exists(to_string(0 + 2 * delta)))
-        Threaded_Files_Merge_Sort(2 * delta);
-    else
-    {
-        /*
-        In case, if original size is less than 4 kb, final file name can be not 0, but
-        any other (depends on which thread wrote it). So I rename that last element here
-        */
-        boost::filesystem::path p = boost::filesystem::current_path();
-        for (auto it = boost::filesystem::directory_iterator(p); it != boost::filesystem::directory_iterator(); it++)
-        {
-            boost::filesystem::rename(it->path().filename().string(), "0");
-        }
-    }
-}
-
-void File_Merge(string file1, string file2)
-{
-    /*Open input streams*/
-    ifstream input1(file1, ios::binary);
-    ifstream input2(file2, ios::binary);
-
-    /*Open output stream*/
-    ofstream output("mrg_" + file1, ios::binary);
-    unsigned int cur_value1;
-    unsigned int cur_value2;
-
-    /*Read first values*/
-    input1.read((char *)&cur_value1, sizeof(cur_value1));
-    input2.read((char *)&cur_value2, sizeof(cur_value2));
-
-    /*Making merging for files*/
-    while (input1.peek() != EOF && input2.peek() != EOF)
-    {
-        if (cur_value1 <= cur_value2)
-        {
-            output.write((char *)&cur_value1, sizeof(cur_value1));
-            input1.read((char *)&cur_value1, sizeof(cur_value1));
-        }
-        else
-        {
-            output.write((char *)&cur_value2, sizeof(cur_value2));
-            input2.read((char *)&cur_value2, sizeof(cur_value2));
-        }
-    }
-    input1.close();
-    input2.close();
-    output.close();
-
-    /*Removing initial files*/
-    boost::filesystem::remove(file1);
-    boost::filesystem::remove(file2);
-
-    /*Rename merged file into name of the first file*/
-    boost::filesystem::rename("mrg_" + file1, file1);
-}
-
-void File_Split(string path)
-{
-    ifstream input(path, ios::binary);
-
-    /*Creating temporary directory*/
-    mkdir("temp", S_IRWXU);
-    int f_num = 0;
-
-    thread threads[2 * sysconf(_SC_NPROCESSORS_ONLN)];
-
-    if (input.good())
-    {
-        while (input.peek() != EOF)
-        {
-            /*
-            Creating 2*cores threads to read from file.
-            Or less, if there are not so much files
-            */
-            for (int i = 0; i < 2 * sysconf(_SC_NPROCESSORS_ONLN); i++)
-            {
-                threads[i] = thread(Threaded_File_Input, ref(input), f_num);
-                f_num++;
-            }
-
-            /*Joining all threads*/
-            for (int i = 0; i < 2 * sysconf(_SC_NPROCESSORS_ONLN); i++)
-            {
-                if (threads[i].joinable())
-                    threads[i].join();
-            }
-        }
-        input.close();
-        boost::filesystem::current_path("./temp");
+        cout << "Reading the file " << path << endl;
+        Array = (unsigned int *)mmap(0, size * sizeof(unsigned int), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+        madvise(Array, size, POSIX_MADV_WILLNEED | POSIX_MADV_SEQUENTIAL);
     }
     else
     {
-        cout << "Error, while trying to open the file" << endl;
+        cout << "An error occurred, while trying to read the file" << endl;
         exit(1);
     }
 }
 
-void Threaded_File_Input(ifstream &input, int f_num)
+void MappedFile::Read()
+{
+    Read(input_path);
+}
+
+void MappedFile::Write()
+{
+    /*Checking, if there is enough disk space available to create a copy of the initial file*/
+    if (boost::filesystem::space(boost::filesystem::current_path()).available > size * sizeof(unsigned int))
+        try
+        {
+            /*Copy the input file to the output file*/
+            cout << "Reading the file " << input_path << endl;
+            cout << "Writing to the file " << output_path << endl;
+            boost::filesystem::copy(input_path, output_path, boost::filesystem::copy_options::overwrite_existing);
+        }
+        catch (boost::filesystem::filesystem_error ex)
+        {
+            cout << "The error occurred, while trying to write the file: " << ex.what();
+            exit(1);
+        }
+    else
+    {
+        cout << "The error occurred: Not enough disk space to create the file's copy" << endl;
+        exit(1);
+    }
+}
+
+void MappedFile::Sort()
 {
 
-    vector<unsigned int> cur_values(1024, INT32_MAX);
-
-    /*Checking if we finished reading the file*/
-    mut.lock();
-
-    bool is_end = input.peek() != EOF;
-
-    mut.unlock();
-
-    if (is_end)
+    /*
+    Sets the output file and copy data from the input
+    file to it. If the input and  the output are the same files
+    only reads the input
+    */
+    if (input_path != output_path)
     {
-        /*Reading values of size 4 kb, or less into buffer*/
-        mut.lock();
-
-        input.read((char *)&cur_values[0], cur_values.size() * sizeof(cur_values[0]));
-
-        mut.unlock();
-
-        /*Sorting values in buffer*/
-        sort(cur_values.begin(), cur_values.end());
-
-        /*Write sorted values in the file with number f_num*/
-        ofstream output("./temp/" + to_string(f_num), ios::binary);
-
-        for (auto value = cur_values.begin(); value < cur_values.end(); value++)
-        {
-            if (!(*value < INT32_MAX))
-                break;
-            output.write((char *)&(*value), sizeof(*value));
-        }
-
-        output.close();
+        this->Write();
+        this->Read(output_path);
     }
+    else
+        this->Read();
+    
+    /*Sorting the file*/
+    cout << "Sorting the file " << output_path << endl;
+    Rec_Threaded_Sort(ref(Array), 0, size);
+    cout << "Done" << endl;
+}
+
+void MappedFile::Rec_Threaded_Sort(unsigned int *&ptr, int begin, int end)
+{
+    /*Threads counter*/
+    static atomic_int t_num(0);
+    t_num++;
+
+    /*
+    end-begin - part size
+    Optimal minimal part size is 2 Mb (read README.md for more information)
+    */
+    if (!(t_num > thread::hardware_concurrency()) && !(end-begin < pow(2, 21)/sizeof(unsigned int)))
+    {
+        thread t(Rec_Threaded_Sort, ref(ptr), begin, end / 2); 
+        Rec_Threaded_Sort(ref(ptr), end / 2, end);
+        t.join();
+
+        /*
+        Following the description of std::inplace_merge() it uses additional RAM ONLY,
+        if it is possible. So there can't be the situation, when it is used more memory,
+        than is available
+        */
+        inplace_merge(ptr + begin, ptr + end / 2, ptr + end);
+    }
+    else
+    {
+        sort(ptr + begin, ptr + end);
+    }
+}
+
+MappedFile::~MappedFile()
+{
+    int fc = close(fd);
 }
