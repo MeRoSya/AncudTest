@@ -4,7 +4,7 @@ Test task
 
 ## Concept
 
-The program sorts an array of unsigned ints from a binary file and write it to another file
+The program sorts an array of unsigned ints from a binary file and writes it to another file
 
 ## Usage
 
@@ -40,7 +40,7 @@ Using CTest in CMake to test
 
 ## Algorithm info
 The program uses modified merge sort and *file mapping*.<br> 
-So the max size of the file, which is to sort, is limited only by the number of possible adresses (2^32 for x32 systems and 2^64 for x64 systems).<br>
+So the max size of the file, which is to sort, is limited only by the number of possible addresses (2^32 for x32 systems and 2^64 for x64 systems).<br>
 So the biggest possible file to sort on x64 machine is *4 exabytes* and on x32 machine - *2 Gb*. <br>
 
  Sorting time (Tested with min part size 1 element):
@@ -71,7 +71,7 @@ So the biggest possible file to sort on x64 machine is *4 exabytes* and on x32 m
     Sequential (using only std::sort()): 71 ms
     Threaded (using MappedFile::Rec_Threaded_Sort()): 63 ms
 
-    As you can see, the optimal minimal size of part is 2 Mb
+    As you can see, the optimal minimal size of the part is 2 Mb
     
  ## Updating possibilities
- There is the interface IFile, which can be used to create other emplimentations of file sorting
+ There is the interface IFile, which can be used to create other implementations of file sorting
