@@ -5,8 +5,6 @@
 #include <fstream>
 #include <cmath>
 
-using namespace std;
-
 /*Functions' prototypes*/
 
 /*
@@ -40,24 +38,24 @@ int main(int argc, char *argv[])
 
         /*Help information*/
         case 'h':
-            cout << "Options list:" << endl;
-            cout << endl;
-            cout << "-h [ --help ]\t\tShows help" << endl;
-            cout << "-s [ --size ] arg\tInput size of generating file" << endl;
-            cout << endl;
-            cout << "if -s flag isn't used, program will try to use default size: 1" << endl;
-            cout << endl;
-            cout << "-p [ --prefix ] arg\tPrefix" << endl;
-            cout << endl;
-            cout << "Prefixes" << endl;
-            cout << "\"1\" - kiloBytes" << endl;
-            cout << "\"2\" - MegaBytes" << endl;
-            cout << "\"3\" - GigaBytes" << endl;
-            cout << "\"4\" - TeraBytes" << endl;
-            cout << "\"5\" - PetaBytes" << endl;
-            cout << "etc..." << endl;
-            cout << endl;
-            cout << "if -p flag isn't used, program will try to use default prefix kilo-" << endl;
+            std::cout << "Options list:" << std::endl;
+            std::cout << std::endl;
+            std::cout << "-h [ --help ]\t\tShows help" << std::endl;
+            std::cout << "-s [ --size ] arg\tInput size of generating file" << std::endl;
+            std::cout << std::endl;
+            std::cout << "if -s flag isn't used, program will try to use default size: 1" << std::endl;
+            std::cout << std::endl;
+            std::cout << "-p [ --prefix ] arg\tPrefix" << std::endl;
+            std::cout << std::endl;
+            std::cout << "Prefixes" << std::endl;
+            std::cout << "\"1\" - kiloBytes" << std::endl;
+            std::cout << "\"2\" - MegaBytes" << std::endl;
+            std::cout << "\"3\" - GigaBytes" << std::endl;
+            std::cout << "\"4\" - TeraBytes" << std::endl;
+            std::cout << "\"5\" - PetaBytes" << std::endl;
+            std::cout << "etc..." << std::endl;
+            std::cout << std::endl;
+            std::cout << "if -p flag isn't used, program will try to use default prefix kilo-" << std::endl;
             return 0;
             break;
 
@@ -77,17 +75,17 @@ int main(int argc, char *argv[])
                     to be equal 0. So that case must be handled too
                     */
                     if (n == 0)
-                        throw(invalid_argument("The size cannot be equal 0"));
+                        throw(std::invalid_argument("The size cannot be equal 0"));
                     else
                         size = n;
                 }
                 else
-                    throw invalid_argument("Invalid size");
+                    throw std::invalid_argument("Invalid size");
             }
-            catch (invalid_argument ex)
+            catch (std::invalid_argument ex)
             {
-                cout << ex.what() << endl;
-                cout << "Default size will be used" << endl;
+                std::cout << ex.what() << std::endl;
+                std::cout << "Default size will be used" << std::endl;
             }
             break;
 
@@ -103,18 +101,18 @@ int main(int argc, char *argv[])
                     /*Prefix with value not in [1;5] makes no sense, so it must be handled as error*/
                     if ((n < 1) || (n > 5))
                     {
-                        throw invalid_argument("Invalid prefix value: is too big, or too small.");
+                        throw std::invalid_argument("Invalid prefix value: is too big, or too small.");
                         n = 1;
                     }
                     kilosize = pow(kilosize, n);
                 }
                 else
-                    throw invalid_argument("Invalid prefix type");
+                    throw std::invalid_argument("Invalid prefix type");
             }
-            catch (invalid_argument ex)
+            catch (std::invalid_argument ex)
             {
-                cout << ex.what() << endl;
-                cout << "Default prefix will be used" << endl;
+                std::cout << ex.what() << std::endl;
+                std::cout << "Default prefix will be used" << std::endl;
             }
             break;
 
@@ -136,7 +134,7 @@ int main(int argc, char *argv[])
 
     /*Output to binary file*/
     remove("Array");
-    ofstream output("Array", ios::binary);
+    std::ofstream output("Array", std::ios::binary);
 
     for (int i = 0; i < size; i++)
     {
@@ -156,7 +154,7 @@ int main(int argc, char *argv[])
 
 bool Is_Number(char *value)
 {
-    string str(value);
+    std::string str(value);
     for (auto item = str.begin(); item < str.end(); item++)
     {
         /*Checking the current symbol to be a digit*/
