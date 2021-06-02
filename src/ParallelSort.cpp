@@ -10,6 +10,8 @@
 #include <cmath>
 #include <atomic>
 
+#define MIN_PART_SIZE pow(2, 21)/sizeof(unsigned int)
+
 /*The interface to use in all File-sort classes*/
 class IFile
 {
@@ -247,7 +249,7 @@ void MappedFile::Rec_Threaded_Sort(unsigned int *&ptr, int begin, int end)
     end-begin - part size
     Optimal minimal part size is 2 Mb (read README.md for more information)
     */
-    if (!(t_num > std::thread::hardware_concurrency()) && !(end-begin < pow(2, 21)/sizeof(unsigned int)))
+    if (!(t_num > std::thread::hardware_concurrency()) && !(end-begin < MIN_PART_SIZE))
     {
         std::thread t(Rec_Threaded_Sort, std::ref(ptr), begin, end / 2); 
         Rec_Threaded_Sort(std::ref(ptr), end / 2, end);
