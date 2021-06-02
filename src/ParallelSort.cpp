@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <getopt.h>
 #include <cmath>
+#include <atomic>
 
 using namespace std;
 
@@ -234,7 +235,7 @@ void MappedFile::Sort()
 void MappedFile::Rec_Threaded_Sort(unsigned int *&ptr, int begin, int end)
 {
     /*Threads counter*/
-    static atomic_int t_num(0);
+    static atomic<int> t_num(0);
     t_num++;
 
     /*
