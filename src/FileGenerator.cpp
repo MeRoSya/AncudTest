@@ -16,7 +16,8 @@ int main(int argc, char *argv[])
     {
 
         static struct option long_options[] = {{"help", no_argument, 0, 'h'},
-                                               {"size", required_argument, 0, 's'}};
+                                               {"size", required_argument, 0, 's'},
+                                               {"prefix", required_argument, 0, 'p'}};
         int option_index = 0;
 
         int cur_opt = getopt_long(argc, argv, "hs:p:", long_options, &option_index);
