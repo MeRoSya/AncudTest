@@ -22,7 +22,9 @@ int main(int argc, char *argv[])
         int cur_opt = getopt_long(argc, argv, "hf:", long_options, &option_index);
 
         if (cur_opt == -1)
+        {
             break;
+        }
 
         switch (cur_opt)
         {
@@ -91,6 +93,8 @@ int main(int argc, char *argv[])
         std::cout << "The array is sorted" << std::endl;
     }
     else
+    {
         std::cout << "An error occurred, while trying to open the file" << std::endl;
+    }
     return 0;
 }

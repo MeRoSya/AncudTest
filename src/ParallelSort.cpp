@@ -99,7 +99,9 @@ int main(int argc, char *argv[])
         int cur_opt = getopt_long(argc, argv, "hi:o:", long_options, &option_index);
 
         if (cur_opt == -1)
+        {
             break;
+        }
 
         switch (cur_opt)
         {
@@ -190,6 +192,7 @@ void MappedFile::Write()
 {
     /*Checking, if there is enough disk space available to create a copy of the initial file*/
     if (boost::filesystem::space(boost::filesystem::current_path()).available > size * sizeof(unsigned int))
+    {
         try
         {
             /*Copy the input file to the output file*/
@@ -202,6 +205,7 @@ void MappedFile::Write()
             std::cout  << "The error occurred, while trying to write the file: " << ex.what();
             exit(1);
         }
+    }
     else
     {
         std::cout  << "The error occurred: Not enough disk space to create the file's copy" << std::endl;
@@ -223,8 +227,10 @@ void MappedFile::Sort()
         this->Read(output_path);
     }
     else
+    {
         this->Read();
-    
+    }
+
     /*Sorting the file*/
     std::cout  << "Sorting the file " << output_path << std::endl;
     Rec_Threaded_Sort(std::ref(Array), 0, size);

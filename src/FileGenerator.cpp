@@ -22,7 +22,9 @@ int main(int argc, char *argv[])
         int cur_opt = getopt_long(argc, argv, "hs:p:", long_options, &option_index);
 
         if (cur_opt == -1)
+        {
             break;
+        }
 
         switch (cur_opt)
         {
@@ -67,12 +69,18 @@ int main(int argc, char *argv[])
                     to be equal 0. So that case must be handled too
                     */
                     if (n == 0)
+                    {
                         throw(std::invalid_argument("The size cannot be equal 0"));
+                    }
                     else
+                    {
                         size = n;
+                    }
                 }
                 else
+                {
                     throw std::invalid_argument("Invalid size");
+                }
             }
             catch (std::invalid_argument ex)
             {
@@ -100,7 +108,9 @@ int main(int argc, char *argv[])
                     kilosize = pow(kilosize, n);
                 }
                 else
+                {
                     throw std::invalid_argument("Invalid prefix type");
+                }
             }
             catch (std::invalid_argument ex)
             {
