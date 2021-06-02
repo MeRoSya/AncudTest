@@ -5,15 +5,6 @@
 #include <fstream>
 #include <cmath>
 
-/*Functions' prototypes*/
-
-/*
-Function, checking c-type string to be number
-Args:
-value - c-type string to be checked
-*/
-bool Is_Number(char *value);
-
 int main(int argc, char *argv[])
 {
     srand(time(0));
@@ -63,8 +54,9 @@ int main(int argc, char *argv[])
         case 's':
             try
             {
+                std::string sizestr(optarg);
                 /*Not a number argument for a size makes no sense, so it must be handled as an error*/
-                if (Is_Number(optarg))
+                if (std::all_of(sizestr.begin(),sizestr.end(), [] (char i){return isdigit(i);}))
                 {
                     unsigned int n = atoi(optarg);
 
@@ -94,7 +86,8 @@ int main(int argc, char *argv[])
             try
             {
                 /*Not a number argument for a prefix makes no sense, so it must be handled as an error*/
-                if (Is_Number(optarg))
+                std::string prefix(optarg);
+                if (std::all_of(prefix.begin(),prefix.end(), [] (char i){return isdigit(i);}))
                 {
                     unsigned int n = atoi(optarg);
 
@@ -148,20 +141,4 @@ int main(int argc, char *argv[])
     output.close();
 
     return 0;
-}
-
-/*Implementation of functions*/
-
-bool Is_Number(char *value)
-{
-    std::string str(value);
-    for (auto item = str.begin(); item < str.end(); item++)
-    {
-        /*Checking the current symbol to be a digit*/
-        if (!isdigit(*item))
-        {
-            return false;
-        }
-    }
-    return true;
 }
