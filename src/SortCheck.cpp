@@ -1,6 +1,7 @@
+#include <getopt.h>
+
 #include <iostream>
 #include <fstream>
-#include <getopt.h>
 
 using namespace std;
 

@@ -1,11 +1,12 @@
+#include <fcntl.h>
+#include <getopt.h>
+#include <boost/filesystem.hpp>
+#include <sys/mman.h>
+
 #include <iostream>
 #include <fstream>
 #include <thread>
 #include <algorithm>
-#include <boost/filesystem.hpp>
-#include <sys/mman.h>
-#include <fcntl.h>
-#include <getopt.h>
 #include <cmath>
 #include <atomic>
 

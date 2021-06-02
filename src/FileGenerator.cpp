@@ -1,7 +1,8 @@
-#include <iostream>
-#include <fstream>
 #include <getopt.h>
 #include <string.h>
+
+#include <iostream>
+#include <fstream>
 #include <cmath>
 
 using namespace std;
