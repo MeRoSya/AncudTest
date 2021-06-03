@@ -3,6 +3,7 @@
 #include <sys/stat.h>
 #include <getopt.h>
 
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <cmath>
