@@ -1,7 +1,6 @@
-#include <getopt.h>
-
-#include <iostream>
 #include <fstream>
+
+#include "Parsing.hpp"
 
 int main(int argc, char *argv[])
 {
@@ -12,46 +11,8 @@ int main(int argc, char *argv[])
     std::string path = "Sorted_Array";
 
     /*Cmd arguments handling*/
-    while (true)
-    {
-
-        static struct option long_options[] = {{"help", no_argument, 0, 'h'},
-                                               {"file", required_argument, 0, 'f'}};
-        int option_index = 0;
-
-        int cur_opt = getopt_long(argc, argv, "hf:", long_options, &option_index);
-
-        if (cur_opt == -1)
-        {
-            break;
-        }
-
-        switch (cur_opt)
-        {
-
-        /*Help information*/
-        case 'h':
-            std::cout << "Options list:" << std::endl;
-            std::cout << "-h [ --help ]\t\tShows help" << std::endl;
-            std::cout << "-f [ --file ] arg\tInput path to file with data" << std::endl;
-            std::cout << "if -f flag isn't used, program will try to use default file ./Array" << std::endl;
-            return 0;
-            break;
-
-        /*Setting the path to file*/
-        case 'f':
-            path = optarg;
-            break;
-
-        case '?':
-            /*Error is already printed by getopt_long*/
-            return 1;
-            break;
-
-        default:
-            break;
-        }
-    }
+    SortCheckPars ps(argc, argv);
+    ps.Parse(path);
 
     /*A variable, which contains the
     previous value, read from file*/

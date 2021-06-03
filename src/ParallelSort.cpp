@@ -1,15 +1,14 @@
 #include <fcntl.h>
-#include <getopt.h>
 #include <boost/filesystem.hpp>
 #include <sys/mman.h>
 
-#include <iostream>
 #include <fstream>
 #include <thread>
 #include <algorithm>
-#include <cmath>
 
-#define MIN_PART_SIZE pow(2, 21)/sizeof(unsigned int)
+#include "Parsing.hpp"
+
+#define MIN_PART_SIZE pow(2, 21) / sizeof(unsigned int)
 
 /*The interface to use in all File-sort classes*/
 class IFile
@@ -35,7 +34,6 @@ class MappedFile : public IFile
     static void Rec_Threaded_Sort(unsigned int *&ptr, int begin, int end, unsigned long long int part_size);
 
 protected:
-
     /*The pointer to the begin of the information in the file*/
     unsigned int *Array;
 
@@ -68,7 +66,7 @@ public:
     (copies the input file)
     */
     virtual void Write();
-    
+
     /*
     Additional method to implement reading of any file, not only the input one.
     Sets the pointer Array to point on the begin of the info in the file path.
@@ -90,62 +88,11 @@ int main(int argc, char *argv[])
     std::string output_path = "./Sorted_Array";
 
     /*Cmd arguments handling*/
-    while (true)
-    {
+    ParallelSortPars ps(argc, argv);
+    ps.Parse(input_path, output_path);
 
-        static struct option long_options[] = {{"help", no_argument, 0, 'h'},
-                                               {"ifile", required_argument, 0, 'i'},
-                                               {"ofile", required_argument, 0, 'o'}};
-        int option_index = 0;
-
-        int cur_opt = getopt_long(argc, argv, "hi:o:", long_options, &option_index);
-
-        if (cur_opt == -1)
-        {
-            break;
-        }
-
-        switch (cur_opt)
-        {
-
-        /*Help information*/
-        case 'h':
-            std::cout  << "Options list:" << std::endl;
-            std::cout  << "-h [ --help ]\t\tShows help" << std::endl;
-            std::cout  << "-i [ --ifile ] arg\tA path to the input file" << std::endl;
-            std::cout  << "if -i flag isn't used, program will try to use default file ./Array" << std::endl;
-            std::cout  << std::endl;
-            std::cout  << "-o [ --ofile ] arg\tA path to the output file" << std::endl;
-            std::cout  << "if -o flag isn't used, program will try to use default file ./Sorted_Array" << std::endl;
-            return 0;
-            break;
-
-        /*Setting the path to the input file*/
-        case 'i':
-            input_path = optarg;
-            if (!boost::filesystem::exists(input_path))
-            {
-                std::cout  << "The input file doesn't exist" << std::endl;
-                exit(1);
-            }
-            break;
-
-        /*Setting the path to the output file*/
-        case 'o':
-            output_path = optarg;
-            break;
-
-        case '?':
-            /*Error is already printed by getopt_long*/
-            return 1;
-            break;
-
-        default:
-            break;
-        }
-    }
-
-    std::cout  << "Starting processes..." << std::endl;
+    /*Sorting*/
+    std::cout << "Starting processes..." << std::endl;
     MappedFile file(input_path, output_path);
     file.Sort();
     return 0;
@@ -163,7 +110,7 @@ MappedFile::MappedFile(std::string input_path, std::string output_path)
     }
     catch (boost::filesystem::filesystem_error ex)
     {
-        std::cout  << "An error occurred: " << ex.what() << std::endl;
+        std::cout << "An error occurred: " << ex.what() << std::endl;
         exit(1);
     }
     this->Array = nullptr;
@@ -171,16 +118,16 @@ MappedFile::MappedFile(std::string input_path, std::string output_path)
 
 void MappedFile::Read(std::string path)
 {
-    
+
     if ((fd = open(path.c_str(), O_RDWR)))
     {
-        std::cout  << "Reading the file " << path << std::endl;
+        std::cout << "Reading the file " << path << std::endl;
         Array = (unsigned int *)mmap(0, size * sizeof(unsigned int), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
         madvise(Array, size, POSIX_MADV_WILLNEED | POSIX_MADV_SEQUENTIAL);
     }
     else
     {
-        std::cout  << "An error occurred, while trying to read the file" << std::endl;
+        std::cout << "An error occurred, while trying to read the file" << std::endl;
         exit(1);
     }
 }
@@ -198,19 +145,19 @@ void MappedFile::Write()
         try
         {
             /*Copy the input file to the output file*/
-            std::cout  << "Reading the file " << input_path << std::endl;
-            std::cout  << "Writing to the file " << output_path << std::endl;
+            std::cout << "Reading the file " << input_path << std::endl;
+            std::cout << "Writing to the file " << output_path << std::endl;
             boost::filesystem::copy(input_path, output_path, boost::filesystem::copy_options::overwrite_existing);
         }
         catch (boost::filesystem::filesystem_error ex)
         {
-            std::cout  << "The error occurred, while trying to write the file: " << ex.what();
+            std::cout << "The error occurred, while trying to write the file: " << ex.what();
             exit(1);
         }
     }
     else
     {
-        std::cout  << "The error occurred: Not enough disk space to create the file's copy" << std::endl;
+        std::cout << "The error occurred: Not enough disk space to create the file's copy" << std::endl;
         exit(1);
     }
 }
@@ -234,32 +181,32 @@ void MappedFile::Sort()
     }
 
     /*Sorting the file*/
-    std::cout  << "Sorting the file " << output_path << std::endl;
-    Rec_Threaded_Sort(std::ref(Array), 0, size, this->size/std::thread::hardware_concurrency());
-    std::cout  << "Done" << std::endl;
+    std::cout << "Sorting the file " << output_path << std::endl;
+    Rec_Threaded_Sort(std::ref(Array), 0, size, this->size / std::thread::hardware_concurrency());
+    std::cout << "Done" << std::endl;
 }
 
 void MappedFile::Rec_Threaded_Sort(unsigned int *&ptr, int begin, int end, unsigned long long int part_size)
 {
-    
+
     /*
     end-begin - part size
     Optimal MIN_PART_SIZE is 2 Mb (read README.md for more information)
     */
-    if ((end-begin > MIN_PART_SIZE) && !(end-begin < 2*part_size))
+    if ((end - begin > MIN_PART_SIZE) && !(end - begin < 2 * part_size))
     {
-        
-        std::thread t1(Rec_Threaded_Sort, std::ref(ptr), begin, (begin+end) / 2, part_size);
-        Rec_Threaded_Sort(std::ref(ptr), (begin+end) / 2, end, part_size);
-        
+
+        std::thread t1(Rec_Threaded_Sort, std::ref(ptr), begin, (begin + end) / 2, part_size);
+        Rec_Threaded_Sort(std::ref(ptr), (begin + end) / 2, end, part_size);
+
         t1.join();
-          
+
         /*
         Following the description of std::inplace_merge() it uses additional RAM ONLY,
         if it is possible. So there can't be the situation, when the program is using more memory,
         than is available
         */
-        std::inplace_merge(ptr + begin, ptr + (begin+end) / 2, ptr + end);
+        std::inplace_merge(ptr + begin, ptr + (begin + end) / 2, ptr + end);
     }
     else
     {
