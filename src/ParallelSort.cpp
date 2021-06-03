@@ -8,7 +8,6 @@
 #include <thread>
 #include <algorithm>
 #include <cmath>
-#include <atomic>
 
 #define MIN_PART_SIZE pow(2, 21)/sizeof(unsigned int)
 
@@ -31,8 +30,9 @@ class MappedFile : public IFile
     ptr - Array
     begin - Start point of sorting
     end - End point of sorting
+    part_size - the size of the part to handle in a one thread
     */
-    static void Rec_Threaded_Sort(unsigned int *&ptr, int begin, int end);
+    static void Rec_Threaded_Sort(unsigned int *&ptr, int begin, int end, unsigned long long int part_size);
 
 protected:
 
@@ -235,32 +235,31 @@ void MappedFile::Sort()
 
     /*Sorting the file*/
     std::cout  << "Sorting the file " << output_path << std::endl;
-    Rec_Threaded_Sort(std::ref(Array), 0, size);
+    Rec_Threaded_Sort(std::ref(Array), 0, size, this->size/std::thread::hardware_concurrency());
     std::cout  << "Done" << std::endl;
 }
 
-void MappedFile::Rec_Threaded_Sort(unsigned int *&ptr, int begin, int end)
+void MappedFile::Rec_Threaded_Sort(unsigned int *&ptr, int begin, int end, unsigned long long int part_size)
 {
-    /*Threads counter*/
-    static std::atomic<int> t_num(0);
-    t_num++;
-
+    
     /*
     end-begin - part size
-    Optimal minimal part size is 2 Mb (read README.md for more information)
+    Optimal MIN_PART_SIZE is 2 Mb (read README.md for more information)
     */
-    if (!(t_num > std::thread::hardware_concurrency()) && !(end-begin < MIN_PART_SIZE))
+    if ((end-begin > MIN_PART_SIZE) && !(end-begin < 2*part_size))
     {
-        std::thread t(Rec_Threaded_Sort, std::ref(ptr), begin, end / 2); 
-        Rec_Threaded_Sort(std::ref(ptr), end / 2, end);
-        t.join();
-
+        
+        std::thread t1(Rec_Threaded_Sort, std::ref(ptr), begin, (begin+end) / 2, part_size);
+        Rec_Threaded_Sort(std::ref(ptr), (begin+end) / 2, end, part_size);
+        
+        t1.join();
+          
         /*
         Following the description of std::inplace_merge() it uses additional RAM ONLY,
         if it is possible. So there can't be the situation, when the program is using more memory,
         than is available
         */
-        std::inplace_merge(ptr + begin, ptr + end / 2, ptr + end);
+        std::inplace_merge(ptr + begin, ptr + (begin+end) / 2, ptr + end);
     }
     else
     {
