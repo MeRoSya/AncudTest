@@ -31,6 +31,9 @@ void Parsing::Parse()
             std::cout << "-h [ --help ]\t\tShows help" << std::endl;
             exit(0);
             break;
+
+        default:
+            break;
         }
     }
 }
