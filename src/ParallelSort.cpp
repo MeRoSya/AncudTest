@@ -1,15 +1,14 @@
-#include <iostream>
+#include <fcntl.h>
+#include <boost/filesystem.hpp>
+#include <sys/mman.h>
+
 #include <fstream>
 #include <thread>
 #include <algorithm>
-#include <boost/filesystem.hpp>
-#include <sys/mman.h>
-#include <fcntl.h>
-#include <getopt.h>
-#include <cmath>
-#include <atomic>
 
-using namespace std;
+#include "Parsing.hpp"
+
+#define MIN_PART_SIZE pow(2, 21) / sizeof(unsigned int)
 
 /*The interface to use in all File-sort classes*/
 class IFile
@@ -30,11 +29,11 @@ class MappedFile : public IFile
     ptr - Array
     begin - Start point of sorting
     end - End point of sorting
+    part_size - the size of the part to handle in a one thread
     */
-    static void Rec_Threaded_Sort(unsigned int *&ptr, int begin, int end);
+    static void Rec_Threaded_Sort(unsigned int *&ptr, int begin, int end, unsigned long long int part_size);
 
 protected:
-
     /*The pointer to the begin of the information in the file*/
     unsigned int *Array;
 
@@ -45,14 +44,14 @@ protected:
     int fd;
 
     /*The path to the input file*/
-    string input_path;
+    std::string input_path;
 
     /*The path to the output file*/
-    string output_path;
+    std::string output_path;
 
 public:
     /*Constructor*/
-    MappedFile(string input_path = "./Array", string output_path = "./Sorted_Array");
+    MappedFile(std::string input_path = "./Array", std::string output_path = "./Sorted_Array");
 
     /*Implementing interface's methods*/
 
@@ -67,12 +66,12 @@ public:
     (copies the input file)
     */
     virtual void Write();
-    
+
     /*
     Additional method to implement reading of any file, not only the input one.
     Sets the pointer Array to point on the begin of the info in the file path.
     */
-    void Read(string path);
+    void Read(std::string path);
 
     /*Destructor*/
     virtual ~MappedFile();
@@ -85,64 +84,15 @@ int main(int argc, char *argv[])
     and initializing them with default values
     */
 
-    string input_path = "./Array";
-    string output_path = "./Sorted_Array";
+    std::string input_path = "./Array";
+    std::string output_path = "./Sorted_Array";
 
     /*Cmd arguments handling*/
-    while (true)
-    {
+    ParallelSortPars ps(argc, argv);
+    ps.Parse(input_path, output_path);
 
-        static struct option long_options[] = {{"help", no_argument, 0, 'h'},
-                                               {"ifile", required_argument, 0, 'i'},
-                                               {"ofile", required_argument, 0, 'o'}};
-        int option_index = 0;
-
-        int cur_opt = getopt_long(argc, argv, "hi:o:", long_options, &option_index);
-
-        if (cur_opt == -1)
-            break;
-
-        switch (cur_opt)
-        {
-
-        /*Help information*/
-        case 'h':
-            cout << "Options list:" << endl;
-            cout << "-h [ --help ]\t\tShows help" << endl;
-            cout << "-i [ --ifile ] arg\tA path to the input file" << endl;
-            cout << "if -i flag isn't used, program will try to use default file ./Array" << endl;
-            cout << endl;
-            cout << "-o [ --ofile ] arg\tA path to the output file" << endl;
-            cout << "if -o flag isn't used, program will try to use default file ./Sorted_Array" << endl;
-            return 0;
-            break;
-
-        /*Setting the path to the input file*/
-        case 'i':
-            input_path = optarg;
-            if (!boost::filesystem::exists(input_path))
-            {
-                cout << "The input file doesn't exist" << endl;
-                exit(1);
-            }
-            break;
-
-        /*Setting the path to the output file*/
-        case 'o':
-            output_path = optarg;
-            break;
-
-        case '?':
-            /*Error is already printed by getopt_long*/
-            return 1;
-            break;
-
-        default:
-            break;
-        }
-    }
-
-    cout << "Starting processes..." << endl;
+    /*Sorting*/
+    std::cout << "Starting processes..." << std::endl;
     MappedFile file(input_path, output_path);
     file.Sort();
     return 0;
@@ -150,7 +100,7 @@ int main(int argc, char *argv[])
 
 /*Implementation of the methods of the class*/
 
-MappedFile::MappedFile(string input_path, string output_path)
+MappedFile::MappedFile(std::string input_path, std::string output_path)
 {
     this->input_path = input_path;
     this->output_path = output_path;
@@ -160,24 +110,24 @@ MappedFile::MappedFile(string input_path, string output_path)
     }
     catch (boost::filesystem::filesystem_error ex)
     {
-        cout << "An error occurred: " << ex.what() << endl;
+        std::cout << "An error occurred: " << ex.what() << std::endl;
         exit(1);
     }
     this->Array = nullptr;
 }
 
-void MappedFile::Read(string path)
+void MappedFile::Read(std::string path)
 {
-    
+
     if ((fd = open(path.c_str(), O_RDWR)))
     {
-        cout << "Reading the file " << path << endl;
+        std::cout << "Reading the file " << path << std::endl;
         Array = (unsigned int *)mmap(0, size * sizeof(unsigned int), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
         madvise(Array, size, POSIX_MADV_WILLNEED | POSIX_MADV_SEQUENTIAL);
     }
     else
     {
-        cout << "An error occurred, while trying to read the file" << endl;
+        std::cout << "An error occurred, while trying to read the file" << std::endl;
         exit(1);
     }
 }
@@ -191,21 +141,23 @@ void MappedFile::Write()
 {
     /*Checking, if there is enough disk space available to create a copy of the initial file*/
     if (boost::filesystem::space(boost::filesystem::current_path()).available > size * sizeof(unsigned int))
+    {
         try
         {
             /*Copy the input file to the output file*/
-            cout << "Reading the file " << input_path << endl;
-            cout << "Writing to the file " << output_path << endl;
+            std::cout << "Reading the file " << input_path << std::endl;
+            std::cout << "Writing to the file " << output_path << std::endl;
             boost::filesystem::copy(input_path, output_path, boost::filesystem::copy_options::overwrite_existing);
         }
         catch (boost::filesystem::filesystem_error ex)
         {
-            cout << "The error occurred, while trying to write the file: " << ex.what();
+            std::cout << "The error occurred, while trying to write the file: " << ex.what();
             exit(1);
         }
+    }
     else
     {
-        cout << "The error occurred: Not enough disk space to create the file's copy" << endl;
+        std::cout << "The error occurred: Not enough disk space to create the file's copy" << std::endl;
         exit(1);
     }
 }
@@ -224,40 +176,41 @@ void MappedFile::Sort()
         this->Read(output_path);
     }
     else
+    {
         this->Read();
-    
+    }
+
     /*Sorting the file*/
-    cout << "Sorting the file " << output_path << endl;
-    Rec_Threaded_Sort(ref(Array), 0, size);
-    cout << "Done" << endl;
+    std::cout << "Sorting the file " << output_path << std::endl;
+    Rec_Threaded_Sort(std::ref(Array), 0, size, this->size / std::thread::hardware_concurrency());
+    std::cout << "Done" << std::endl;
 }
 
-void MappedFile::Rec_Threaded_Sort(unsigned int *&ptr, int begin, int end)
+void MappedFile::Rec_Threaded_Sort(unsigned int *&ptr, int begin, int end, unsigned long long int part_size)
 {
-    /*Threads counter*/
-    static atomic<int> t_num(0);
-    t_num++;
 
     /*
     end-begin - part size
-    Optimal minimal part size is 2 Mb (read README.md for more information)
+    Optimal MIN_PART_SIZE is 2 Mb (read README.md for more information)
     */
-    if (!(t_num > thread::hardware_concurrency()) && !(end-begin < pow(2, 21)/sizeof(unsigned int)))
+    if ((end - begin > MIN_PART_SIZE) && !(end - begin < 2 * part_size))
     {
-        thread t(Rec_Threaded_Sort, ref(ptr), begin, end / 2); 
-        Rec_Threaded_Sort(ref(ptr), end / 2, end);
-        t.join();
+
+        std::thread t1(Rec_Threaded_Sort, std::ref(ptr), begin, (begin + end) / 2, part_size);
+        Rec_Threaded_Sort(std::ref(ptr), (begin + end) / 2, end, part_size);
+
+        t1.join();
 
         /*
         Following the description of std::inplace_merge() it uses additional RAM ONLY,
         if it is possible. So there can't be the situation, when the program is using more memory,
         than is available
         */
-        inplace_merge(ptr + begin, ptr + end / 2, ptr + end);
+        std::inplace_merge(ptr + begin, ptr + (begin + end) / 2, ptr + end);
     }
     else
     {
-        sort(ptr + begin, ptr + end);
+        std::sort(ptr + begin, ptr + end);
     }
 }
 
